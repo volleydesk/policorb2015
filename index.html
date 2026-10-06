@@ -3,14 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Volleysched</title>
+<title>Volleydesk</title>
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="googlebot" content="noindex, nofollow">
 <meta name="theme-color" content="#1f2a44">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Volleysched">
+<meta name="apple-mobile-web-app-title" content="Volleydesk">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="societa.css">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <style>
@@ -401,7 +402,7 @@ a.btn{text-decoration:none;color:inherit}
   .brand{font-size:15.5px;gap:8px}
   .brand small{display:none}
   .brand svg{width:26px;height:26px}
-  .nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--bar);display:grid;grid-template-columns:repeat(6,1fr);gap:0;padding:4px 2px calc(4px + env(safe-area-inset-bottom));box-shadow:0 -2px 12px rgba(0,0,0,.18)}
+  .nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--bar);display:grid;grid-template-columns:repeat(7,1fr);gap:0;padding:4px 2px calc(4px + env(safe-area-inset-bottom));box-shadow:0 -2px 12px rgba(0,0,0,.18)}
   .nav button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 0;border-radius:10px;font-size:10.5px;font-weight:600;opacity:.7;min-width:0}
   .nav button.on{background:rgba(255,255,255,.14)}
   .nav .ni{display:block;font-size:19px;line-height:1.15}
@@ -1732,6 +1733,74 @@ body.has-upd .help-btn::after{content:'';position:absolute;top:2px;right:2px;wid
 :root[data-theme=dark] .inj-tag{background:#4a1d26;color:#ffd7dc}
 .vid-btn{display:inline-flex;align-items:center;gap:6px;margin:4px 0 10px}
 
+
+.sc-switch{display:inline-flex;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:2px;gap:2px}
+.sc-switch button{border:0;background:none;color:#fff;font-weight:700;font-size:12.5px;padding:4px 11px;border-radius:999px;cursor:pointer;opacity:.75}
+.sc-switch button.on{background:#fff;color:var(--bar);opacity:1}
+body:has(.ls) .nav,body:has(.ls) .topbar,body:has(.ls) .fab{display:none!important}
+body:has(.ls) main{padding-top:8px;padding-bottom:12px}
+.ls{display:flex;flex-direction:column;gap:8px;max-width:760px;margin:0 auto}
+.ls-head{background:var(--bar);color:#fff;border-radius:14px;padding:8px 10px 10px;box-shadow:var(--shadow);position:sticky;top:4px;z-index:12}
+.ls-head .r{display:flex;align-items:center;gap:8px}
+.ls-head .btn{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.22);color:#fff;padding:4px 10px;min-height:0}
+.ls-head .opp{flex:1;min-width:0;font-size:12.5px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ls-score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;margin-top:6px}
+.ls-score .t{font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.7;font-weight:700}
+.ls-score .n{font-size:36px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.ls-score .side{display:flex;flex-direction:column;align-items:center;gap:4px}
+.ls-score .plus{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:9px;font-weight:800;font-size:13px;padding:5px 12px;cursor:pointer}
+.ls-score .mid{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:12px}
+.ls-score .mid select{width:auto;padding:2px 4px;font-size:12px;border-radius:7px}
+.ls-head .serve{cursor:pointer}
+.ls-court{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px}
+.ls-court .net{display:flex;align-items:center;gap:6px;margin:0 4px 6px;font-size:10px;font-weight:800;letter-spacing:.08em;color:var(--muted)}
+.ls-court .net::before,.ls-court .net::after{content:'';flex:1;height:4px;border-radius:2px;background:var(--bar)}
+.ls-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.st-tile{border:2px solid var(--line-2);background:var(--surface-2,#f6f3ee);border-radius:12px;padding:4px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;position:relative;min-height:52px;justify-content:center;touch-action:manipulation;color:var(--ink)}
+.st-tile b{font-size:19px;line-height:1}
+.st-tile .nm{font-size:12.5px;font-weight:700;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st-tile .z{position:absolute;top:3px;left:6px;font-size:10px;color:var(--muted);font-weight:700}
+.st-tile.srv{border-color:#f0c56b;background:#fff7e3}
+.st-tile.srv::after{content:'🏐';position:absolute;top:2px;right:4px;font-size:12px}
+.st-tile.on{border-color:var(--accent);background:#fff0df;box-shadow:0 0 0 3px rgba(224,123,34,.25)}
+.ls-bench{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.ls-bench .lbl{font-size:11.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.ls-bench .pchip{font-size:12px;padding:1px 8px 1px 2px;border-width:1.5px}
+.ls-bench .pchip .nr{min-width:20px;height:20px;font-size:10.5px}
+.ls-hint{font-size:13px;color:var(--muted);text-align:center;min-height:18px}
+.ls-hint b{color:var(--ink)}
+.sa{display:flex;flex-direction:column;gap:8px}
+.sa-row{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px;display:grid;grid-template-columns:86px repeat(3,minmax(0,1fr));gap:6px;align-items:stretch;transition:box-shadow .15s,opacity .15s}
+.sa-row.focus{box-shadow:0 0 0 2px var(--accent);border-color:transparent}
+.sa-row.dim{opacity:.78}
+.sa-row h4{margin:0;display:flex;flex-direction:column;justify-content:center;font-size:14.5px;line-height:1.15}
+.sa-row h4 small{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+.sbtn{border:1.5px solid;border-radius:11px;font-weight:800;font-size:14.5px;min-height:50px;cursor:pointer;touch-action:manipulation;padding:4px 2px;line-height:1.1}
+.sbtn.g{background:#dff3e6;border-color:#7cc99a;color:#1d6b3c}
+.sbtn.y{background:#fff1d6;border-color:#f0c56b;color:#8a5a00}
+.sbtn.r{background:#fde4e7;border-color:#e9a0aa;color:#b3263a}
+.sbtn:active{transform:scale(.96)}
+.sa-err{border:1.5px dashed #e9a0aa;background:var(--surface);color:#b3263a;border-radius:12px;font-weight:800;font-size:14.5px;min-height:48px;cursor:pointer;width:100%}
+.ls-foot{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ls-foot .btn{justify-content:center}
+.ls-last{font-size:12.5px;color:var(--muted);text-align:center}
+@media (max-width:420px){ .sa-row{grid-template-columns:72px repeat(3,minmax(0,1fr));gap:5px;padding:5px} .sbtn{font-size:13.5px;min-height:48px} .ls-score .n{font-size:32px} .ls-score{margin-top:2px} .ls-head{padding:6px 8px 8px} .ls-hint{font-size:12px;min-height:0} }
+.ls>div{display:flex;flex-direction:column;gap:8px}
+/* telefono in orizzontale: due colonne, tutto in una schermata */
+@media (orientation: landscape) and (max-height: 520px), (orientation: landscape) and (pointer: coarse) and (min-height: 521px) and (max-width: 1440px){
+  .ls{max-width:none;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:8px;height:100vh;height:100dvh;box-sizing:border-box;padding:6px calc(8px + env(safe-area-inset-right)) 6px calc(8px + env(safe-area-inset-left));background:var(--bg)}
+  .ls>div{display:flex;flex-direction:column;gap:6px;min-height:0;min-width:0}
+  .ls-head{position:static;padding:6px 8px}
+  .ls-score{margin-top:2px}.ls-score .n{font-size:30px}
+  .ls-court{padding:6px;flex:1;min-height:0;overflow:auto}
+  .st-tile{min-height:46px;padding:3px}.st-tile b{font-size:17px}
+  .sa{flex:1;justify-content:space-between;gap:5px}
+  .sa-row{flex:1;padding:5px;gap:5px}.sbtn{min-height:0}
+  .sa-err{min-height:38px}
+  .ls-foot .btn{padding:4px 6px}
+  .ls-hint,.ls-last{display:none}
+}
+
 #print-area{display:none}
 
 /* ---------- PRINT ---------- */
@@ -1776,16 +1845,17 @@ table.p-sched tfoot td{font-weight:700;border-top:1pt solid #1f2a44;border-botto
 .p-legend svg{width:100%;max-width:170mm;display:block;margin-top:6pt}
 .p-footer{margin-top:10pt;font-size:8pt;color:#888}
 </style>
-<script>try{var _t=localStorage.getItem('vs-theme')||'auto';document.documentElement.dataset.theme=(_t==='dark'||(_t==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches))?'dark':'light';}catch(e){}</script>
+<script>try{var _t=localStorage.getItem('vd-theme')||'auto';document.documentElement.dataset.theme=(_t==='dark'||(_t==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches))?'dark':'light';}catch(e){}</script>
 </head>
 <body>
 <header class="topbar">
   <div class="brand" data-nav="home" title="Pagina iniziale">
     <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#ffd23f" stroke="#fff" stroke-width="2"/><path d="M16 2c-2 6 0 12 6 16M3 12c6 0 11 3 13 4M5 25c3-5 8-8 11-9M29 13c-5-2-9 0-13 3M23 28c0-6-3-9-7-12" fill="none" stroke="#1f2a44" stroke-width="1.6"/></svg>
-    <div>Volleysched<small>Esercizi, sessioni, presenze, partite e atleti</small></div>
+    <div>Volleydesk<small>Gestionale della società di pallavolo</small></div>
   </div>
   <nav class="nav" id="nav">
     <button data-nav="atleti" id="nav-atleti"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M16.2 14.2c2.8.2 4.8 2.1 4.8 5"/></svg></span><span class="nl">Atleti</span></button>
+    <button data-nav="societa"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 20.5h17"/><path d="M5 20.5V10M9.7 20.5V10M14.3 20.5V10M19 20.5V10"/><path d="M2.8 10h18.4L12 3.5z"/></svg></span><span class="nl">Società</span></button>
     <button data-nav="sessioni"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4.5" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="M8.5 10h7M8.5 13.5h7M8.5 17h4.5"/></svg></span><span class="nl">Sessioni</span></button>
     <button data-nav="presenze"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M8 12.3l2.7 2.7 5.5-5.7"/></svg></span><span class="nl">Presenze</span></button>
     <button data-nav="partite"><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M8 13.5h3M13 13.5h3M8 17h3"/></svg></span><span class="nl">Partite</span></button>
@@ -2390,7 +2460,7 @@ function render(){
   else if(ui.view==='esercizio') { app.innerHTML = viewEsercizio(); mountSchemaBox(); updateDosUI(true); }
   else if(ui.view==='sessioni') app.innerHTML = viewSessioni();
   else if(ui.view==='sessione') { app.innerHTML = viewSessione(); $$('#items textarea').forEach(autoGrow); }
-  else if(ui.view==='impostazioni'){ app.innerHTML = viewImpostazioni(); accordionize(); }
+  else if(ui.view==='impostazioni'){ app.innerHTML = viewImpostazioni(); accordionize(); socLegacyCheck(); }
   else if(ui.view==='home') app.innerHTML = viewHome();
   else if(ui.view==='note') app.innerHTML = viewNote();
   else if(ui.view==='allena'){ app.innerHTML = viewAllena(); if(!trTick) trTick=setInterval(trTickFn, 500); }
@@ -2398,7 +2468,8 @@ function render(){
   else if(ui.view==='partite') app.innerHTML = viewPartite();
   else if(ui.view==='partita') app.innerHTML = viewPartita();
   else if(ui.view==='presenze') app.innerHTML = viewPresenze();
-  else if(ui.view==='benvenuto') app.innerHTML = viewBenvenuto();
+  else if(ui.view==='benvenuto'){ app.innerHTML = viewBenvenuto(); socLegacyCheck(); }
+  else if(ui.view==='societa') app.innerHTML = viewSocieta();
   else if(ui.view==='live') app.innerHTML = viewLive();
   else if(ui.view==='referto'){ app.innerHTML = viewReferto(); const t=$('.rf-tl'); if(t) t.scrollLeft=t.scrollWidth; }
   else if(ui.view==='guida') app.innerHTML = viewGuida();
@@ -2406,7 +2477,8 @@ function render(){
   else if(ui.view==='agenda') app.innerHTML = viewAgenda();
   else if(ui.view==='piano') app.innerHTML = viewPiano();
   else if(ui.view==='controlli') app.innerHTML = viewControlli();
-  document.body.classList.toggle('wide', ['atleti','presenze'].includes(ui.view));
+  document.body.classList.toggle('wide', ['atleti','presenze','societa'].includes(ui.view));
+  document.body.classList.toggle('coach', typeof isCoach==='function' && isCoach());
   document.body.classList.toggle('live-land', ui.view==='live' && isLand());
   renderNavBadge();
   renderBackupHint();
@@ -2794,8 +2866,8 @@ function compBar(s){
 }
 
 const MEDX=`<svg class="medx" viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" rx="5" fill="#d7263d"/><path d="M9.5 4.5h5v5h5v5h-5v5h-5v-5h-5v-5h5z" fill="#fff"/></svg>`;
-function viewMode(k){ ui.vmode=ui.vmode||{}; if(ui.vmode[k]) return ui.vmode[k]; let v=''; try{ v=localStorage.getItem('vs-'+k+'View')||''; }catch(e){} return ui.vmode[k]=(v==='compatta'||(v==='mese'&&k==='match')?v:'schede'); }
-function setViewMode(k,v){ ui.vmode=ui.vmode||{}; ui.vmode[k]=v; try{ localStorage.setItem('vs-'+k+'View', v); }catch(e){} render(); }
+function viewMode(k){ ui.vmode=ui.vmode||{}; if(ui.vmode[k]) return ui.vmode[k]; let v=''; try{ v=localStorage.getItem('vd-'+k+'View')||''; }catch(e){} return ui.vmode[k]=(v==='compatta'||(v==='mese'&&k==='match')?v:'schede'); }
+function setViewMode(k,v){ ui.vmode=ui.vmode||{}; ui.vmode[k]=v; try{ localStorage.setItem('vd-'+k+'View', v); }catch(e){} render(); }
 const sessView=()=>viewMode('sess');
 const segHTML=k=>`<div class="vseg" role="group" aria-label="Vista"><button data-action="view-mode" data-k="${k}" data-v="schede" class="${viewMode(k)==='schede'?'on':''}" title="Vista a schede"><span class="si">${ICO.grid}</span><span class="sl">Schede</span></button><button data-action="view-mode" data-k="${k}" data-v="compatta" class="${viewMode(k)==='compatta'?'on':''}" title="Vista compatta"><span class="si">${ICO.list}</span><span class="sl">Compatta</span></button></div>`;
 function sessRowsHTML(list){
@@ -2810,12 +2882,12 @@ function sessRowsHTML(list){
 }
 
 const ICO = {note:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.5h10.5L19 7v13.5H5z"/><path d="M15.5 3.5V7H19"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></svg>',atleti:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M16.2 14.2c2.8.2 4.8 2.1 4.8 5"/></svg>',sessioni:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4.5" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="M8.5 10h7M8.5 13.5h7M8.5 17h4.5"/></svg>',presenze:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M8 12.3l2.7 2.7 5.5-5.7"/></svg>',partite:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M8 13.5h3M13 13.5h3M8 17h3"/></svg>',esercizi:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 12c-.6-3.6.6-6.6 3.4-8M12 12c3 2 4.4 4.9 4.2 7.9M12 12c-3.4 1.4-6.6 1.2-8.9-.6"/><path d="M8.3 4.3c-.4 2.3.2 4.5 1.6 6.3M19.9 9c-2-.9-4.3-.9-6.4 0M10.6 20.3c1.3-1.8 1.8-4 1.4-6.2"/></svg>',impostazioni:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>',list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.7" cy="6.5" r=".9"/><circle cx="4.7" cy="12" r=".9"/><circle cx="4.7" cy="17.5" r=".9"/></svg>',plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>'};
-const FAB={note:['new-note','Nuova nota'],sessione:['pick-open','Aggiungi esercizio'],atleti:['new-at','Nuovo atleta'],sessioni:['new-sess','Nuova sessione'],esercizi:['new-ex','Nuovo esercizio'],partite:['new-match','Nuova partita'],presenze:['new-tr','Aggiungi allenamento']};
+const FAB={societa:['soc-fab','Nuovo'],note:['new-note','Nuova nota'],sessione:['pick-open','Aggiungi esercizio'],atleti:['new-at','Nuovo atleta'],sessioni:['new-sess','Nuova sessione'],esercizi:['new-ex','Nuovo esercizio'],partite:['new-match','Nuova partita'],presenze:['new-tr','Aggiungi allenamento']};
 function updateFab(){ const b=$('#fab'); if(!b) return; const f=FAB[ui.view]; b.classList.toggle('hidden',!f); if(f){ b.dataset.action=f[0]; b.title=f[1]; b.setAttribute('aria-label',f[1]); } }
 function avRole(a,size){ const sx=sexOf?sexOf(a):''; return `<span class="avw">${avatarHTML(a,size)}${sx==='M'?'<i class="sx m">U</i>':sx==='F'?'<i class="sx f">D</i>':''}</span>`; }
 const ROLE_LEGEND=()=>`<div class="role-legend">${[['P','Palleggiatore'],['B','Banda'],['C','Centrale'],['O','Opposto'],['L','Libero']].map(([r,l])=>`<button data-action="at-rk" data-v="${r}" class="${ui.af.rk===r?'on':''}" title="Mostra solo: ${l}"><i style="background:${ROLE_COL[r]}"></i>${l}${ui.af.rk===r?' ×':''}</button>`).join('')}</div>`;
 /* tema */
-function themePref(){ try{ return localStorage.getItem('vs-theme')||'auto'; }catch(e){ return 'auto'; } }
+function themePref(){ try{ return localStorage.getItem('vd-theme')||'auto'; }catch(e){ return 'auto'; } }
 function applyTheme(){ const p=themePref(); const dark=p==='dark'||(p==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches); document.documentElement.dataset.theme=dark?'dark':'light'; }
 try{ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme); }catch(e){}
 /* colori e logo della squadra */
@@ -2871,10 +2943,11 @@ function viewHome(){
     ['sessioni','Sessioni','#7b5cc4', lastS?`Ultima: ${esc(lastS.titolo||'senza titolo')}`:`${db.sessions.length} sessioni`],
     ['esercizi','Esercizi','#d64a5a', `${db.exercises.length} schede`],
     ['note','Note','#c99a06', (db.notes||[]).length?`${(db.notes||[]).length} not${(db.notes||[]).length===1?'a':'e'}`:'Appunti e idee'],
+    socHomeTile(),
     ['impostazioni','Archivio','#6b7280','Copie e impostazioni'],
-  ];
+  ].filter(Boolean);
   return `<section class="home">
-  <div class="home-head">${st.logo?`<img src="${st.logo}" alt="">`:''}<div><h1>${esc(st.squadra||'Volleysched')}</h1><p>${esc(new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'}))}</p></div>${teamMulti()?'<span class="tsw" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn sm" data-action="ag-go">🗓 Tutte</button><button class="btn sm" data-action="team-pick">⇄ Squadra</button></span>':''}</div>
+  <div class="home-head">${st.logo?`<img src="${st.logo}" alt="">`:''}<div><h1>${esc(st.squadra||socCfg().ragioneSociale||'Volleydesk')}</h1><p>${esc(new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'}))}</p></div>${teamMulti()?'<span class="tsw" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn sm" data-action="ag-go">🗓 Tutte</button><button class="btn sm" data-action="team-pick">⇄ Squadra</button></span>':''}</div>
   ${matchDay()?matchDayHTML(matchDay()):''}
   ${(nextM||nextT)?`<div class="home-next">
     ${nextM&&nextM!==matchDay()?`<div class="hn" data-action="open-match" data-id="${nextM.id}">${ddBox(nextM.data)}<div class="tx"><div class="k">Prossima partita · ${rel(nextM.data)}</div><div class="t">${esc(matchTitle(nextM))}</div>${pgsVsHTML(nextM)}<div class="s">${[nextM.ora?'ore '+nextM.ora:'', nextM.inCasa?'in casa':'in trasferta', convocati(nextM).length?convocati(nextM).length+' convocati':'convocazioni da fare'].filter(Boolean).map(esc).join(' · ')}</div></div></div>`:''}
@@ -3120,15 +3193,15 @@ function syncPanelHTML(){
     <p style="margin-top:0">Per ora i dati sono solo su questo dispositivo. Collega un tuo archivio privato su GitHub (gratuito) per avere gli stessi dati su telefono, tablet e computer. I passi completi sono nella <a href="#" data-action="guide-sync">guida</a>.</p>
     <details ${last.owner?'':'open'}><summary style="cursor:pointer;font-weight:700">Come preparare l'archivio (una volta sola, dal computer)</summary>
     <ol class="steps">
-      <li>Su GitHub crea un archivio nuovo: <a href="https://github.com/new" target="_blank" rel="noopener">github.com/new</a>. Nome: <code>volleysched-dati</code>, scegli <b>Private</b>, poi «Create repository».</li>
+      <li>Su GitHub crea un archivio nuovo: <a href="https://github.com/new" target="_blank" rel="noopener">github.com/new</a>. Nome: <code>volleydesk-dati</code>, scegli <b>Private</b>, poi «Create repository».</li>
       <li>Crea il codice di accesso: <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.
-        Nome: <code>Volleysched</code> · Expiration: la durata più lunga disponibile · Repository access: <b>Only select repositories</b> → <code>volleysched-dati</code> ·
+        Nome: <code>Volleydesk</code> · Expiration: la durata più lunga disponibile · Repository access: <b>Only select repositories</b> → <code>volleydesk-dati</code> ·
         Permissions → Repository permissions → <b>Contents: Read and write</b>. Poi «Generate token» e copia il codice (inizia con <code>github_pat_</code>).</li>
       <li>Inserisci qui sotto i dati e premi «Collega». Sugli altri dispositivi fai lo stesso con lo stesso codice: conservalo in un posto sicuro (per esempio il gestore delle password) e non condividerlo con nessuno.</li>
     </ol></details>
     <div class="grid g3" id="sync-form">
       <label class="f">Nome utente GitHub<input type="text" name="owner" autocomplete="username" autocapitalize="off" spellcheck="false" value="${esc(last.owner||'')}" placeholder="es. mario-rossi"></label>
-      <label class="f">Nome dell'archivio dati<input type="text" name="repo" autocapitalize="off" spellcheck="false" value="${esc(last.repo||'volleysched-dati')}"></label>
+      <label class="f">Nome dell'archivio dati<input type="text" name="repo" autocapitalize="off" spellcheck="false" value="${esc(last.repo||'volleydesk-dati')}"></label>
       <label class="f">Codice di accesso<input type="password" name="token" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></label>
     </div>
     <div class="actions" style="margin-top:12px"><button class="btn primary" data-action="sync-connect">Collega</button><span class="muted" id="sync-msg" style="font-size:13.5px"></span></div>
@@ -3153,7 +3226,11 @@ async function syncConnect(tokenOnly){
     const p=await Sync.probe(c);
     if(!p.private && !confirm('Attenzione: l\'archivio «'+c.repo+'» è PUBBLICO, quindi chiunque potrebbe leggere i dati degli atleti. Ti consiglio di renderlo privato su GitHub (Settings → Danger Zone → Change visibility). Vuoi continuare lo stesso?')){ msg.textContent=''; return; }
     let replace=false;
-    if(p.remoteCount>0 && !Store.isEmpty() && !tokenOnly){
+    if(p.ambito && p.ambito.tipo==='squadra'){
+      if(!Store.isEmpty() && !confirm(`Questo è l'archivio della squadra «${p.ambito.nome||''}», gestito dalla segreteria.\n\nI dati che ci sono adesso su questo dispositivo verranno sostituiti da quelli della squadra (se ti servono, prima scarica una copia da Archivio). Continuare?`)){ msg.textContent=''; return; }
+      replace=true; await Store.setMeta('ambito', p.ambito);
+    }
+    else if(p.remoteCount>0 && !Store.isEmpty() && !tokenOnly){
       const ch=await choiceModal('Ci sono già dei dati online', `Nell'archivio online ci sono già <b>${p.remoteCount}</b> schede (esercizi, sessioni, atleti…). Anche su questo dispositivo ci sono dei dati. Cosa vuoi fare?`, [
         {ic:'☁️', t:'Usa i dati online (consigliato)', d:'Questo dispositivo prende i dati dall\'archivio online; quelli che ci sono adesso qui vengono sostituiti.'},
         {ic:'🔀', t:'Unisci i dati', d:'Le schede di questo dispositivo vengono aggiunte a quelle online. Attenzione: gli esercizi del catalogo potrebbero risultare doppi.'}]);
@@ -3182,8 +3259,9 @@ function refreshFromRemote(){
   loadState().then(()=>{ render(); window.scrollTo(0,y); toast('Dati aggiornati dall\'altro dispositivo'); });
 }
 function viewBenvenuto(){
-  return `<section class="welcome"><h1>Benvenuto in Volleysched</h1>
+  return `<section class="welcome"><h1>Benvenuto in Volleydesk</h1>
   <p class="muted">Su questo dispositivo non ci sono ancora dati. Da dove vuoi partire?</p>
+  <div id="legacy-box"></div>
   <button type="button" class="choice" data-action="w-sync"><span class="ic">☁️</span><span><b>Collego il mio archivio online</b><span class="muted" style="font-size:13.5px">Se hai già usato l'app su un altro dispositivo, o vuoi gli stessi dati su telefono, tablet e computer.</span></span></button>
   <button type="button" class="choice" data-action="import"><span class="ic">📥</span><span><b>Importo un file</b><span class="muted" style="font-size:13.5px">Una copia dei tuoi dati, o gli esercizi ricevuti da un altro allenatore (.json).</span></span></button>
   <button type="button" class="choice" data-action="guide-open"><span class="ic">📖</span><span><b>Prima leggo la guida</b><span class="muted" style="font-size:13.5px">Come funziona l'app, passo per passo.</span></span></button>
@@ -3198,11 +3276,12 @@ const EXP_ITEMS=[
   ['matches','📅 Partite e convocazioni','Calendario, convocati, assenti, formazioni e statistiche.',true],
   ['trainings','✅ Presenze','Calendario degli allenamenti e presenze di ogni atleta.',true],
   ['notes','📝 Note','Le tue note personali.',true],
+  ['societa','🏛 Società','Quote, incassi e ricevute, prima nota, scadenze, staff e magazzino.',true],
   ['settings','⚙️ Impostazioni','Nome della squadra, allenatore, note di stampa, colori e logo.',false],
 ];
 function openExportModal(){
   const o=ui.exp=ui.exp||{sel:{exercises:true,sessions:true}, exMode:'all'};
-  const cnt={notes:(db.notes||[]).length, exercises:db.exercises.length, sessions:db.sessions.length, athletes:db.athletes.length, matches:db.matches.length, trainings:db.trainings.length, settings:''};
+  const cnt={societa:['payments','ledger','deadlines','staff','inventory'].reduce((n,c)=>n+Store.list(c).length,0), notes:(db.notes||[]).length, exercises:db.exercises.length, sessions:db.sessions.length, athletes:db.athletes.length, matches:db.matches.length, trainings:db.trainings.length, settings:''};
   const nFav=favSet().size;
   openModal(`<div class="modal-box" style="max-width:620px">
     <div class="modal-head"><div style="flex:1"><h2>Scarica una copia</h2><div class="muted" style="font-size:13px;margin-top:4px">Scegli cosa mettere nel file. Le voci in rosso contengono dati personali degli atleti.</div></div><button class="iconbtn" data-action="close-modal" title="Chiudi">✕</button></div>
@@ -3227,10 +3306,11 @@ function exportSelected(){
   if(sel.matches) out.matches=sel.athletes?st.matches:st.matches.map(m=>Object.assign({}, m, {convocati:[], assenti:[], disponibili:[], formazione:null, stats:null, referto:null}));
   if(sel.trainings) out.trainings=sel.athletes?st.trainings:st.trainings.map(t=>Object.assign({}, t, {presenze:{}}));
   if(sel.notes) out.notes=st.notes||[];
+  if(sel.societa){ out.payments=st.payments; out.ledger=st.ledger; out.deadlines=st.deadlines; out.staff=st.staff; out.inventory=st.inventory; }
   if(sel.settings){ const s=Object.assign({}, st.settings); delete s.preferiti; delete s.licenza; delete s.provaDal; out.settings=s; }
-  if(!out.exercises.length && !out.sessions.length && !out.athletes && !out.matches && !out.trainings && !out.settings){ alert('Con queste scelte il file sarebbe vuoto (per esempio non hai esercizi preferiti).'); return; }
+  if(!out.exercises.length && !out.sessions.length && !out.athletes && !out.matches && !out.trainings && !out.settings && !out.payments){ alert('Con queste scelte il file sarebbe vuoto (per esempio non hai esercizi preferiti).'); return; }
   const all=EXP_ITEMS.every(([k])=>sel[k]) && o.exMode==='all';
-  const name=all?'volleysched-completo-':(Object.keys(sel).filter(k=>sel[k]).length===1&&sel.exercises?'volleysched-esercizi-':'volleysched-');
+  const name=all?'volleydesk-completo-':(Object.keys(sel).filter(k=>sel[k]).length===1&&sel.exercises?'volleydesk-esercizi-':'volleydesk-');
   const blob=new Blob([JSON.stringify({app:'schedario-pallavolo', exportedAt:new Date().toISOString(), contenuto:Object.keys(sel).filter(k=>sel[k]), data:out}, null, 1)], {type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name+todayISO()+'.json';
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
@@ -3242,7 +3322,7 @@ function exportBackup(){
   const st=Store.fullState(); delete st.info; if(st.settings){ delete st.settings.licenza; delete st.settings.provaDal; }
   markBackup();
   const blob=new Blob([JSON.stringify({app:'schedario-pallavolo', exportedAt:new Date().toISOString(), data:st}, null, 1)], {type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='volleysched-'+todayISO()+'.json';
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='volleydesk-'+todayISO()+'.json';
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
   toast('Copia scaricata');
 }
@@ -3323,7 +3403,7 @@ function sessionPrintCompact(s){
   }
   h+='</div>';
   if(o.note && db.settings.noteGenerali?.trim()) h+=`<div class="p-notes"><h3>Note generali</h3>${db.settings.noteGenerali.trim().split('\n').filter(Boolean).map(l=>{ const m=/^([^:]{2,30}):\s*(.*)$/.exec(l); return `<p style="margin:0 0 2pt">${m?`<b>${esc(m[1])}:</b> ${esc(m[2])}`:esc(l)}</p>`; }).join('')}</div>`;
-  h+=`<div class="p-footer">Stampato il ${new Date().toLocaleDateString('it-IT')} · Volleysched</div></div>`;
+  h+=`<div class="p-footer">Stampato il ${new Date().toLocaleDateString('it-IT')} · Volleydesk</div></div>`;
   return fitTwoPages(h);
 }
 /* riduce il testo finché tutto sta in due facciate A4 */
@@ -3370,7 +3450,7 @@ function sessionPrintHTML(s){
     else h+=`<section class="pex free"><div class="pex-head"><div><div class="pex-time">${esc(when)}</div><h2>${esc(r.it.titolo||'Voce libera')}</h2></div></div>${r.it.descrizione?`<div class="pex-text" style="padding-top:6pt">${nl2br(r.it.descrizione)}</div>`:''}</section>`;
   }
   if(o.note) h+=notesBlock();
-  h+=`<div class="p-footer">Stampato il ${new Date().toLocaleDateString('it-IT')} · Volleysched</div>`;
+  h+=`<div class="p-footer">Stampato il ${new Date().toLocaleDateString('it-IT')} · Volleydesk</div>`;
   return h;
 }
 function doPrint(html, title){
@@ -3525,6 +3605,7 @@ function openAtModal(id){
       <label class="f">N° carta d'identità<input type="text" name="numeroDocumento" value="${esc(a.numeroDocumento)}" placeholder="Es. CA12345AB"></label>
       <label class="f">Scadenza documento<input type="date" name="scadenzaDocumento" value="${esc(a.scadenzaDocumento)}"></label>
     </div></div>
+    ${socAtFormHTML(a)}
     <div class="atf"><h3>Note</h3><textarea name="note" rows="3" placeholder="Allergie, infortuni, disponibilità…" style="width:100%">${esc(a.note)}</textarea></div>
     </div>
     <div class="modal-foot">${id?`<button type="button" class="btn danger" data-action="del-at" data-id="${a.id}">Elimina</button>`:''}<span style="flex:1"></span>
@@ -3540,7 +3621,7 @@ function refreshAtDerived(){
 async function saveAt(){
   const fd=new FormData($('#at-form')), a=ui.atDraft;
   for(const k of ['nome','cognome','cellulare','ruolo','ruolo2','sesso','dataNascita','scadenzaVisita','scadenzaDocumento','taglia','numeroMaglia','numeroDocumento','note']) a[k]=(fd.get(k)??'').toString().trim();
-  a.iscritto=!!fd.get('iscritto');
+  a.iscritto=!!fd.get('iscritto'); socAtFormRead(fd, a);
   if(teamMulti()){ const sq=[...document.querySelectorAll('#at-form [name=sq]:checked')].map(x=>x.value); a.squadre=sq.length?sq:[teamCur()]; }
   if(!a.nome && !a.cognome){ alert('Inserisci almeno il nome o il cognome.'); $('#at-form [name=nome]').focus(); return; }
   const isNew=!a.id; if(isNew){ a.id=newId('at'); a.createdAt=Date.now(); }
@@ -4028,7 +4109,7 @@ function viewLiveLand(){
   return `<div class="ll">
   <div>
     <div class="ll-score">
-      <div class="r"><button class="btn" data-action="live-close" title="Torna alla partita">←</button><span class="st">${esc(m.avversario||"")} · Set ${L.set}${S.sets.length?' · '+S.sets.map(x=>x.noi+'-'+x.loro).join(', '):''}</span><button class="btn" data-action="live-undo" ${S.ev.length?'':'disabled'}>↶</button></div>
+      <div class="r"><button class="btn" data-action="live-close" title="Torna alla partita">←</button>${scoutSwitchHTML(m)}<span class="st">${esc(m.avversario||"")} · Set ${L.set}${S.sets.length?' · '+S.sets.map(x=>x.noi+'-'+x.loro).join(', '):''}</span><button class="btn" data-action="live-undo" ${S.ev.length?'':'disabled'}>↶</button></div>
       <div class="r"><span class="sc">${L.noi}<small>–</small>${L.loro}</span><span style="flex:1"></span><button class="btn" data-action="live-pt" title="Punto nostro su errore avversario">+1 noi</button><button class="btn" data-action="live-pl">+1 loro</button></div>
       <div class="r"><span class="serve ${L.servo?'':'them'}" data-action="live-servo">${L.servo?'🏐 '+esc(athShort(server)):'Battono loro'}</span><span style="flex:1"></span><select data-live="k">${ROTNAME.map((n,i)=>`<option value="${i}" ${L.k===i?'selected':''}>${n}</option>`).join('')}</select></div>
     </div>
@@ -4046,6 +4127,7 @@ function viewLiveLand(){
 let lastLand=isLand();
 window.addEventListener('resize', ()=>{ const l=isLand(); if(l!==lastLand){ lastLand=l; if(ui.view==='live'){ document.body.classList.toggle('live-land', l); rerenderLive(); } } });
 function viewLive(){
+  if(liveMode(getMatch(ui.matchId))==='simple') return viewLiveSimple();
   if(isLand()) return viewLiveLand();
   const m=getMatch(ui.matchId); if(!m) return `<div class="empty">Partita non trovata.</div>`;
   const f=getForm(m), S=getStats(m), L=S.live, who=liveWho(m), z=rotAt(L.k), server=who(z[0]);
@@ -4060,7 +4142,7 @@ function viewLive(){
     <div style="display:flex;gap:6px"><button class="btn sm" data-action="live-pt">+1 noi</button><button class="btn sm" data-action="live-pl">+1 loro</button></div>
     <div style="display:flex;flex-direction:column;gap:4px"><span class="serve ${L.servo?'':'them'}" data-action="live-servo" style="cursor:pointer">${L.servo?'🏐 Batte: '+esc(athShort(server)):'Battono loro'}</span>
       <label style="font-size:12.5px">Rotazione <select data-live="k">${ROTNAME.map((n,i)=>`<option value="${i}" ${L.k===i?'selected':''}>${n}</option>`).join('')}</select></label></div>
-    <button class="btn sm" data-action="live-undo" style="margin-left:auto" ${S.ev.length?'':'disabled'}>↶ Annulla</button>
+    ${scoutSwitchHTML(m)}<button class="btn sm" data-action="live-undo" style="margin-left:auto" ${S.ev.length?'':'disabled'}>↶ Annulla</button>
   </div>
   ${formOk(f)?'':`<div class="warn" style="margin-top:12px">La formazione non è completa: i giocatori in campo e la rotazione non vengono seguiti. Completala nella pagina della partita.</div>`}
   <div class="sess-layout live-grid" style="margin-top:14px;grid-template-columns:minmax(0,1fr) 330px">
@@ -4078,11 +4160,12 @@ function viewLive(){
     </div>
   </div></section>`;
 }
-function evLabel(e){ if(e.k==='sub') return 'cambio, esce '+athShort(e.out); if(e.k==='pt') return 'punto nostro'; if(e.k==='pl') return 'punto loro'; const A=ACTS[e.k]; const b=A&&A.b.find(x=>x[0]===e.v); return A?A.l+': '+(b?b[1].toLowerCase():e.v):e.k; }
+function evLabel(e){ if(e.k==='err' && !e.a) return 'altro errore nostro'; if(e.k==='sub') return 'cambio, esce '+athShort(e.out); if(e.k==='pt') return 'punto nostro'; if(e.k==='pl') return 'punto loro'; const A=ACTS[e.k]; const b=A&&A.b.find(x=>x[0]===e.v); return A?A.l+': '+(b?b[1].toLowerCase():e.v):e.k; }
 function liveEvent(k, v){
   const m=getMatch(ui.matchId), S=getStats(m), L=S.live;
-  if(k!=='pt' && k!=='pl' && !ui.livePick){ toast('Tocca prima il giocatore'); return; }
-  const e={id:newId('ev'), t:Date.now(), s:L.set, a:(k==='pt'||k==='pl')?'':ui.livePick, k, v:v||'', prev:{noi:L.noi, loro:L.loro, servo:L.servo, k:L.k}};
+  const simple=liveMode(m)==='simple', who0=(simple && !ui.livePick && k==='bat' && L.servo) ? liveServer(m) : '';
+  if(k!=='pt' && k!=='pl' && !ui.livePick && !who0 && !(simple && k==='err')){ toast(simple && k==='bat' ? 'Battono loro: la battuta si segna quando battiamo noi' : 'Tocca prima il giocatore'); return; }
+  const e={id:newId('ev'), t:Date.now(), s:L.set, a:(k==='pt'||k==='pl')?'':(ui.livePick||who0||''), k, v:v||'', prev:{noi:L.noi, loro:L.loro, servo:L.servo, k:L.k}};
   if(OUR_PT(e)){ L.noi++; if(!L.servo){ L.k=(L.k+1)%6; L.servo=true; } }
   else if(THEIR_PT(e)){ L.loro++; L.servo=false; }
   e.noi=L.noi; e.loro=L.loro;
@@ -4361,8 +4444,8 @@ function regTable(){
 }
 
 /* ===== Presenze: vista per allenamento ===== */
-function presMode(){ if(ui.pMode) return ui.pMode; let v=''; try{ v=localStorage.getItem('vs-presView')||''; }catch(e){} return ui.pMode=(v==='giorno'||v==='mese')?v:(isPhone()?'giorno':'mese'); }
-function setPresMode(v){ ui.pMode=v; try{ localStorage.setItem('vs-presView', v); }catch(e){} render(); }
+function presMode(){ if(ui.pMode) return ui.pMode; let v=''; try{ v=localStorage.getItem('vd-presView')||''; }catch(e){} return ui.pMode=(v==='giorno'||v==='mese')?v:(isPhone()?'giorno':'mese'); }
+function setPresMode(v){ ui.pMode=v; try{ localStorage.setItem('vd-presView', v); }catch(e){} render(); }
 function dayTraining(){
   const T=trainingsSorted(); if(!T.length) return null;
   if(ui.pDay){ const t=getTr(ui.pDay); if(t) return t; }
@@ -4422,7 +4505,7 @@ function openAtProfile(id){
         ${tile(vis[0],'🩺 Visita medica', vis[1], vis[2], vis[0]==='bad'?`data-action="at-edit" data-id="${a.id}" title="Inserisci la data"`:'')}
         ${tile('','🎂 Compleanno', a.dataNascita?shortDate(a.dataNascita).slice(0,5):'—', age===null?'':`${age} anni${nb?(nb.days===0?' · oggi!':' · tra '+nb.days+' gg'):''}`)}
         ${tile(doc[0],'🪪 Documento', esc(doc[1]), doc[2])}
-        ${tile('','👕 Taglia', esc(a.taglia||'—'), '')}
+        ${tile('','👕 Taglia', esc(a.taglia||'—'), '')}${socAtTile(a)}
       </div>
       ${a.cellulare?`<div class="atp-contact"><a class="btn" href="tel:${esc(a.cellulare.replace(/[^\d+]/g,''))}">📞 Chiama</a><a class="btn wa" href="https://wa.me/${waNumber(a.cellulare)}" target="_blank" rel="noopener">WhatsApp</a><span class="muted">${esc(a.cellulare)}</span></div>`:''}
       ${a.note?`<div class="atp-note">📝 ${nl2br(a.note)}</div>`:''}
@@ -4647,6 +4730,7 @@ function homeRem(){
   const lastM=[...db.matches].filter(m=>m.data&&m.data<td&&dd(m.data)>=-3&&!(m.risultato||'').trim()).pop();
   if(lastM) R.push(`<button data-action="open-match" data-id="${lastM.id}">🏆 Inserisci il risultato di ${esc(lastM.avversario||'ultima partita')}</button>`);
   const pin=(db.notes||[]).filter(n=>n.fissata).length; if(pin) R.push(`<button data-nav="note">📌 ${pin} not${pin===1?'a fissata':'e fissate'}</button>`);
+  socHomeRem().forEach(x=>R.push(x));
   return R;
 }
 /* ===================== NOTE ===================== */
@@ -4999,7 +5083,8 @@ const GUIDE=[
 <ol><li>Dalla partita (o dalla home il giorno della gara) premi <b>📊 Statistiche</b>: l'app controlla che convocati e formazione siano pronti.</li>
 <li>Tocchi l'atleta, poi il gesto e il giudizio: <b>++</b> perfetto, <b>+</b> buono, <b>0</b> neutro, <b>−</b> errore.</li>
 <li>+1 noi / +1 loro aggiornano punteggio, rotazione e battuta; <b>Cambio</b> per le sostituzioni, <b>Fine set</b> a fine set, <b>↶</b> per annullare.</li></ol>
-<p>Girando il telefono in orizzontale hai una vista più comoda. <b>⚡ Partita veloce</b> crea al volo un'amichevole e parte subito.</p>`],
+<p>Girando il telefono in orizzontale hai una vista più comoda. <b>⚡ Partita veloce</b> crea al volo un'amichevole e parte subito.</p>
+<p>In alto puoi scegliere tra statistiche <b>Complete</b> (tutti i fondamentali) e <b>Semplici</b>: solo battuta, ricezione e attacco, con tre esiti ciascuno, più un pulsante per gli altri errori. Nella versione semplice, quando battete voi basta toccare l'esito: la battuta va a chi è in zona 1. L'app ricorda la scelta per le partite successive.</p>`],
 ['📝','Referto e analisi',`
 <p>Nei giorni dopo la partita puoi ricopiare il referto ufficiale: nella partita apri la scheda <b>Referto</b> → <b>Inserisci il referto</b>.</p>
 <ol><li>Formazione di partenza nelle posizioni I–VI (I è chi batte per primo), il palleggiatore e chi batte per primo nel set.</li>
@@ -5013,11 +5098,11 @@ const GUIDE=[
 <p>Per avere gli stessi dati su telefono, tablet e computer si usa un <b>archivio privato su GitHub</b> (gratuito). Solo tu puoi leggerlo. Si prepara una volta sola, meglio dal computer.</p>
 <h4>1. Crea l'account e l'archivio</h4>
 <ol><li>Registrati su <a href="https://github.com/signup" target="_blank" rel="noopener">github.com</a> (se non hai già un account).</li>
-<li>Vai su <a href="https://github.com/new" target="_blank" rel="noopener">github.com/new</a>: nome <code>volleysched-dati</code>, scegli <b>Private</b>, poi «Create repository».</li></ol>
+<li>Vai su <a href="https://github.com/new" target="_blank" rel="noopener">github.com/new</a>: nome <code>volleydesk-dati</code>, scegli <b>Private</b>, poi «Create repository».</li></ol>
 <h4>2. Crea il codice di accesso</h4>
 <ol><li>Apri <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
-<li>Token name: <code>Volleysched</code>. Expiration: la durata più lunga disponibile.</li>
-<li>Repository access: <b>Only select repositories</b> → scegli <code>volleysched-dati</code>.</li>
+<li>Token name: <code>Volleydesk</code>. Expiration: la durata più lunga disponibile.</li>
+<li>Repository access: <b>Only select repositories</b> → scegli <code>volleydesk-dati</code>.</li>
 <li>Permissions → Repository permissions → <b>Contents: Read and write</b>.</li>
 <li>«Generate token» e copia il codice (inizia con <code>github_pat_</code>). GitHub lo mostra una volta sola: conservalo in un posto sicuro, per esempio il gestore delle password.</li></ol>
 <h4>3. Collega ogni dispositivo</h4>
@@ -5041,7 +5126,7 @@ const GUIDE=[
 <li>Se qualcosa non si vede bene, chiudi e riapri l'app.</li>
 <li>Non cancellare i dati del browser o del sito dell'app: se non usi la sincronizzazione, lì ci sono i tuoi dati. Prima, scarica una copia.</li></ul>`],
 ['🔑','Periodo di prova e chiave',`
-<p>Volleysched si può usare gratis per <b>30 giorni</b> dal primo avvio. In <b>Archivio → Chiave di attivazione</b> vedi quanti giorni mancano; negli ultimi 7 giorni compare anche un avviso nella home.</p>
+<p>Volleydesk si può usare gratis per <b>30 giorni</b> dal primo avvio. In <b>Archivio → Chiave di attivazione</b> vedi quanti giorni mancano; negli ultimi 7 giorni compare anche un avviso nella home.</p>
 <ol><li>Chiedi la chiave a chi ti ha passato l'app: è un testo che inizia con <code>VS1-</code>.</li>
 <li>Incollala in <b>Archivio → Chiave di attivazione</b> e premi <b>Attiva la chiave</b>.</li>
 <li>Se usi la sincronizzazione, la chiave arriva da sola anche sugli altri dispositivi.</li></ol>
@@ -5069,7 +5154,7 @@ const GUIDE=[
 function viewGuida(){
   const q=(ui.gq||'').trim().toLowerCase(), strip=h=>h.replace(/<[^>]+>/g,' ').toLowerCase();
   const L=GUIDE.map((g,i)=>[g,i]).filter(([g])=>!q || g[1].toLowerCase().includes(q) || strip(g[2]).includes(q));
-  return `<section class="guide"><div class="page-head"><div><a href="#" data-nav="${ui.gBack||'home'}" class="muted" style="font-size:13.5px;text-decoration:none">← Indietro</a><h1 style="margin-top:4px">Come si fa</h1><p class="muted">Guida rapida a Volleysched. Tocca un argomento per aprirlo.</p><div class="gver">Versione ${esc(verLabel(APP_VERSION))} · <a href="#" data-action="ver-go">controlla aggiornamenti</a></div></div></div>
+  return `<section class="guide"><div class="page-head"><div><a href="#" data-nav="${ui.gBack||'home'}" class="muted" style="font-size:13.5px;text-decoration:none">← Indietro</a><h1 style="margin-top:4px">Come si fa</h1><p class="muted">Guida rapida a Volleydesk. Tocca un argomento per aprirlo.</p><div class="gver">Versione ${esc(verLabel(APP_VERSION))} · <a href="#" data-action="ver-go">controlla aggiornamenti</a></div></div></div>
     <input type="search" class="gsearch" id="g-q" placeholder="Cerca nella guida (es. convocazioni, sincronizzare…)" value="${esc(ui.gq||'')}">
     <div id="g-list">${L.map(([g,i])=>`<details ${q||ui.gOpen===i?'open':''}><summary><span class="gi">${g[0]}</span>${g[1]}</summary><div class="gb">${g[2]}</div></details>`).join('')||'<div class="gnone">Nessun argomento trovato.</div>'}</div></section>`;
 }
@@ -5077,9 +5162,9 @@ function viewGuida(){
 /* ===== Periodo di prova e chiave ===== */
 const PROVA_GG=30, LIC_PUB={"key_ops":["verify"],"ext":true,"kty":"EC","x":"Anp9zTls15uqGWEbbqrfDcO-Eu-jivNXKo2ws2QL-Y4","y":"c8xFsu9O3C-hq8zOKLtpNetISUv1lHqHt25fcXmi2jE","crv":"P-256"};
 const LIC={ready:false, raw:null, key:null};
-function licToday(){ const t=todayISO(); let s=null; try{ s=localStorage.getItem('vs-visto'); }catch(e){}
+function licToday(){ const t=todayISO(); let s=null; try{ s=localStorage.getItem('vd-visto'); }catch(e){}
   const lim=(()=>{ const d=parseISO(t); d.setDate(d.getDate()+60); return toISO(d); })();
-  const m=(s && s>t && s<=lim)?s:t; try{ localStorage.setItem('vs-visto', m); }catch(e){} return m; }
+  const m=(s && s>t && s<=lim)?s:t; try{ localStorage.setItem('vd-visto', m); }catch(e){} return m; }
 function licAddDays(iso,n){ const d=parseISO(iso); d.setDate(d.getDate()+n); return toISO(d); }
 const b64u=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'==='.slice((s.length+3)%4)), c=>c.charCodeAt(0));
 async function licVerify(k){
@@ -5105,7 +5190,7 @@ function licLocked(){
 }
 function viewLock(){ const i=licInfo();
   return `<div class="lock"><div class="ic">🔑</div><h1>${i.st==='scaduta'?'La chiave è scaduta':'Il periodo di prova è terminato'}</h1>
-    <p class="muted" style="margin-top:0">${i.st==='scaduta'?`La chiave valeva fino al ${esc(shortDate(i.s))}.`:`I ${PROVA_GG} giorni di prova sono finiti il ${esc(shortDate(i.end))}.`} Per continuare a usare Volleysched inserisci la chiave che ti ha dato chi ti ha passato l'app.</p>
+    <p class="muted" style="margin-top:0">${i.st==='scaduta'?`La chiave valeva fino al ${esc(shortDate(i.s))}.`:`I ${PROVA_GG} giorni di prova sono finiti il ${esc(shortDate(i.end))}.`} Per continuare a usare Volleydesk inserisci la chiave che ti ha dato chi ti ha passato l'app.</p>
     <p class="muted" style="font-size:13.5px">I tuoi dati sono al sicuro su questo dispositivo: torneranno visibili appena inserisci la chiave.</p>
     <textarea id="lic-key" placeholder="VS1-…" spellcheck="false" autocapitalize="off"></textarea>
     <div class="actions" style="margin-top:10px"><button class="btn primary" data-action="lic-activate">Attiva</button><button class="btn" data-action="lic-export">Scarica una copia dei miei dati</button></div></div>`; }
@@ -5121,12 +5206,12 @@ function licBadge(){ const i=licInfo(); return i.st==='prova'&&i.left<=7?`<butto
 
 /* ===== Tasto indietro ===== */
 const NAV={stack:[], guard:false, back:false, pushed:false, fwdT:0};
-const NAV_KEYS=['matchId','sessId','mTab','refSet','pDay','gBack','gq','gOpen','noteId'];
+const NAV_KEYS=['matchId','sessId','mTab','refSet','pDay','gBack','gq','gOpen','noteId','socTab'];
 function navSnap(){ const o={view:ui.view}; NAV_KEYS.forEach(k=>{ if(ui[k]!==undefined) o[k]=ui[k]; }); return o; }
 function navNeedsGuard(){ return (ui.view!=='home' && ui.view!=='benvenuto') || !$('#modal').classList.contains('hidden') || !!$('.picker.open'); }
 /* La «barriera» è una sola voce nella cronologia sopra quella di partenza. Dopo un «indietro» non se ne crea una nuova
    (Chrome per Android salterebbe la voce di partenza e chiuderebbe l'app): si torna avanti sulla stessa barriera. */
-function navPush(){ history.pushState({vs:Date.now()}, ''); NAV.guard=true; NAV.pushed=true; }
+function navPush(){ history.pushState({vd:Date.now()}, ''); NAV.guard=true; NAV.pushed=true; }
 function navSync(){ try{
   if(!navNeedsGuard() || NAV.guard) return;
   if(NAV.pushed){ NAV.guard=true; history.forward(); clearTimeout(NAV.fwdT); NAV.fwdT=setTimeout(()=>{ if(!(history.state&&history.state.vs)) navPush(); }, 400); }
@@ -5270,7 +5355,7 @@ async function demoClear(){
 }
 
 /* ===== Versione dell'app ===== */
-const APP_VERSION='v52-2026-10-06';
+const APP_VERSION='v2-2026-10-06';
 function verLabel(v){ const m=String(v||'').match(/^v(\d+)-(\d{4})-(\d\d)-(\d\d)/); return m?`${m[1]} del ${+m[4]}/${+m[3]}/${m[2]}`:String(v||'?'); }
 const verNum=v=>{ const m=String(v||'').match(/^v(\d+)/); return m?+m[1]:0; };
 let swReg=null;
@@ -5285,7 +5370,7 @@ async function checkUpdate(){
   if(verNum(online)>verNum(APP_VERSION)) show('new', `Online c'è la versione ${verLabel(online)}: tra poco compare la barra «Aggiorna» (se non compare, chiudi e riapri l'app).`);
   else show('ok', '✓ Stai usando l\'ultima versione pubblicata.');
 }
-function verBoxHTML(){ return `<div class="ver-box"><span>Volleysched</span><span class="vn">versione ${esc(verLabel(APP_VERSION))}</span><button class="btn sm" data-action="ver-check">Controlla aggiornamenti</button><span id="ver-msg" class="ver-msg"></span></div>`; }
+function verBoxHTML(){ return `<div class="ver-box"><span>Volleydesk</span><span class="vn">versione ${esc(verLabel(APP_VERSION))}</span><button class="btn sm" data-action="ver-check">Controlla aggiornamenti</button><span id="ver-msg" class="ver-msg"></span></div>`; }
 
 /* ===== Più squadre ===== */
 const TEAM_FIELDS=['squadra','allenatore','colore','accento','logo','campionati','opzioni','calendarioAllenamenti'];
@@ -5760,8 +5845,8 @@ function icsEsc(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;
 function icsDT(d, t){ return d.replace(/-/g,'')+'T'+(t||'00:00').replace(':','')+'00'; }
 function icsAdd(d, t, min){ const x=new Date(d+'T'+(t||'00:00')+':00'); x.setMinutes(x.getMinutes()+min); const p=n=>String(n).padStart(2,'0'); return `${x.getFullYear()}${p(x.getMonth()+1)}${p(x.getDate())}T${p(x.getHours())}${p(x.getMinutes())}00`; }
 function icsBuild(o){
-  const now=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z'), td=todayISO(), from=o.past?licAddDays(td,-120):td, team=db.settings.squadra||'Volleysched', E=[];
-  const ev=(uid, d, t, dur, sum, loc, desc)=>{ const allDay=!t; E.push(['BEGIN:VEVENT','UID:'+uid+'@volleysched','DTSTAMP:'+now,
+  const now=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z'), td=todayISO(), from=o.past?licAddDays(td,-120):td, team=db.settings.squadra||'Volleydesk', E=[];
+  const ev=(uid, d, t, dur, sum, loc, desc)=>{ const allDay=!t; E.push(['BEGIN:VEVENT','UID:'+uid+'@volleydesk','DTSTAMP:'+now,
     allDay?'DTSTART;VALUE=DATE:'+d.replace(/-/g,''):'DTSTART:'+icsDT(d,t), allDay?'DTEND;VALUE=DATE:'+icsAdd(d,'00:00',1440).slice(0,8):'DTEND:'+icsAdd(d,t,dur),
     'SUMMARY:'+icsEsc(sum), loc?'LOCATION:'+icsEsc(loc):'', desc?'DESCRIPTION:'+icsEsc(desc):'', 'END:VEVENT'].filter(Boolean).join('\r\n')); };
   if(o.partite) db.matches.filter(m=>m.data && m.data>=from).forEach(m=>{
@@ -5770,7 +5855,7 @@ function icsBuild(o){
     ev('p-'+m.id, m.data, m.oraRitrovo&&o.ritrovo?m.oraRitrovo:m.ora, m.oraRitrovo&&o.ritrovo&&m.ora?120+Math.max(0,(parseInt(m.ora)*60+parseInt(m.ora.slice(3)))-(parseInt(m.oraRitrovo)*60+parseInt(m.oraRitrovo.slice(3)))):120, '🏐 '+matchTitle(m), loc, desc); });
   if(o.allenamenti) db.trainings.filter(t=>t.data>=from && !t.annullato).forEach(t=>{ const s=db.sessions.find(x=>x.data===t.data); const dur=s&&s.items?Math.max(60,s.items.reduce((a,i)=>a+(+i.durata||0),0)):90;
     ev('a-'+t.id, t.data, t.ora, dur, '✅ Allenamento '+team, (s&&s.luogo)||'', s&&s.titolo?'Programma: '+s.titolo:''); });
-  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Volleysched//IT','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:'+icsEsc(team), ...E, 'END:VCALENDAR'].join('\r\n')+'\r\n';
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Volleydesk//IT','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:'+icsEsc(team), ...E, 'END:VCALENDAR'].join('\r\n')+'\r\n';
 }
 function openIcs(){
   const o=ui.ics=Object.assign({partite:true, allenamenti:true, past:false, ritrovo:true}, ui.ics||{});
@@ -5786,11 +5871,63 @@ function openIcs(){
 }
 function icsOpts(){ const o=ui.ics; o.partite=$('#ics-p').checked; o.allenamenti=$('#ics-a').checked; o.ritrovo=$('#ics-r').checked; o.past=$('#ics-old').checked; return o; }
 function icsFile(){ const o=icsOpts(); if(!o.partite && !o.allenamenti){ alert('Scegli partite, allenamenti o entrambi.'); return null; }
-  const name=((db.settings.squadra||'volleysched').replace(/[^\w]+/g,'-').toLowerCase()||'volleysched')+'.ics';
+  const name=((db.settings.squadra||'volleydesk').replace(/[^\w]+/g,'-').toLowerCase()||'volleydesk')+'.ics';
   return new File([icsBuild(o)], name, {type:'text/calendar'}); }
 /* ===== Video negli esercizi ===== */
 function vidUrl(u){ u=String(u||'').trim(); if(!u) return ''; if(!/^https?:\/\//i.test(u)) u='https://'+u; try{ const x=new URL(u); return /^https?:$/.test(x.protocol)?x.href:''; }catch(e){ return ''; } }
 function vidBtnHTML(e){ const u=vidUrl(e&&e.video); return u?`<a class="btn sm vid-btn" href="${esc(u)}" target="_blank" rel="noopener">▶ Guarda il video</a>`:''; }
+
+/* ===== Statistiche semplificate ===== */
+const SACTS={
+  bat:{l:'Battuta', b:[['#','Ace','g'],['+','In campo','y'],['=','Errore','r']]},
+  ric:{l:'Ricezione', b:[['+','Buona','g'],['-','Scarsa','y'],['=','Errore','r']]},
+  att:{l:'Attacco', b:[['#','Punto','g'],['+','In gioco','y'],['=','Errore','r']]}
+};
+function liveMode(m){ const L=m && getStats(m).live; return (L && L.mode) || opz().scout || 'full'; }
+function scoutSwitchHTML(m){ const md=liveMode(m); return `<div class="sc-switch" role="group" aria-label="Tipo di statistiche">${[['full','Completa'],['simple','Semplice']].map(([v,l])=>`<button class="${md===v?'on':''}" data-action="live-mode" data-v="${v}">${l}</button>`).join('')}</div>`; }
+function liveServer(m){ const L=getStats(m).live; return liveWho(m)(rotAt(L.k)[0]); }
+function simpleTiles(m){
+  const f=getForm(m), L=getStats(m).live, who=liveWho(m), z=rotAt(L.k); if(!formOk(f)) return null;
+  return [4,3,2,5,6,1].map(zone=>{ const slot=z[zone-1], front=[2,3,4].includes(zone); let id=who(slot);
+    if(f.libero && f.L && SLOT_ROLE[slot]==='C' && !front && !(zone===1 && L.servo)) id=f.L;
+    return {id, zone}; });
+}
+function viewLiveSimple(){
+  const m=getMatch(ui.matchId); if(!m) return `<div class="empty">Partita non trovata.</div>`;
+  const S=getStats(m), L=S.live, server=liveServer(m), tiles=simpleTiles(m), conv=convocati(m), court=new Set(onCourt(m));
+  const pick=ui.livePick, e=S.ev[S.ev.length-1];
+  const chip=a=>`<button class="pchip ${court.has(a.id)?'court':''} ${pick===a.id?'on':''}" data-pick="${a.id}"><span class="nr">${esc(a.numeroMaglia||'–')}</span>${esc(athShort(a.id))}</button>`;
+  const tile=t=>{ const a=getAt(t.id); return `<button class="st-tile ${pick&&pick===t.id?'on':''} ${L.servo&&t.zone===1?'srv':''}" ${t.id?`data-pick="${t.id}"`:'disabled'}><span class="z">${t.zone}</span><b>${esc(a?athNum(t.id):'—')}</b><span class="nm">${esc(a?athShort(t.id):'')}</span></button>`; };
+  const bench=conv.filter(a=>!court.has(a.id));
+  const focus=L.servo?'bat':'ric';
+  const sub=k=>{ if(k==='bat') return L.servo ? (pick?'':'di '+esc(athShort(server))) : 'battono loro';
+    if(k==='ric') return L.servo ? '' : 'tocca a noi'; return ''; };
+  const hint=pick ? `Azione di <b>${esc(athShort(pick))}</b>: scegli cosa ha fatto` : L.servo ? `Battuta di <b>${esc(athShort(server))}</b>: tocca l'esito, oppure prima un giocatore` : 'Tocca il giocatore, poi l\'esito';
+  return `<div class="ls">
+  <div>
+    <div class="ls-head">
+      <div class="r"><button class="btn" data-action="live-close" title="Torna alla partita">←</button><span class="opp">${esc(m.avversario||'')} · Set ${L.set}${S.sets.length?' · '+S.sets.map(x=>x.noi+'-'+x.loro).join(', '):''}</span>${scoutSwitchHTML(m)}<button class="btn" data-action="live-undo" title="Annulla l'ultima azione" ${S.ev.length?'':'disabled'}>↶</button></div>
+      <div class="ls-score">
+        <div class="side"><span class="t">Noi</span><span class="n">${L.noi}</span><button class="plus" data-action="live-pt" title="Punto nostro su errore avversario">+1</button></div>
+        <div class="mid"><span class="serve ${L.servo?'':'them'}" data-action="live-servo">${L.servo?'🏐 Battiamo':'Battono loro'}</span><select data-live="k" title="Rotazione">${ROTNAME.map((n,i)=>`<option value="${i}" ${L.k===i?'selected':''}>${n}</option>`).join('')}</select></div>
+        <div class="side"><span class="t">Loro</span><span class="n">${L.loro}</span><button class="plus" data-action="live-pl">+1</button></div>
+      </div>
+    </div>
+    <div class="ls-court">
+      ${tiles?`<div class="net">RETE</div><div class="ls-tiles">${tiles.map(tile).join('')}</div>`:`<div class="pchips">${conv.map(chip).join('')||'<span class="muted">Nessun convocato.</span>'}</div><div class="muted" style="font-size:12px;margin-top:6px">Formazione incompleta: completala nella partita per vedere chi è in campo.</div>`}
+      ${tiles&&bench.length?`<div class="ls-bench"><span class="lbl">Panchina</span>${bench.map(chip).join('')}</div>`:''}
+    </div>
+    <div class="ls-hint">${hint}</div>
+  </div>
+  <div>
+    <div class="sa">
+      ${Object.entries(SACTS).map(([k,A])=>`<div class="sa-row ${k===focus?'focus':''} ${(k==='bat'&&!L.servo)?'dim':''}"><h4>${A.l}<small>${sub(k)}</small></h4>${A.b.map(([v,l,c])=>`<button class="sbtn ${c}" data-ev="${k}" data-v="${v}">${l}</button>`).join('')}</div>`).join('')}
+      <button class="sa-err" data-ev="err" data-v="=">✋ Altro errore nostro <span style="font-weight:600;font-size:12px">(fallo, invasione…)</span></button>
+    </div>
+    <div class="ls-foot"><button class="btn" data-action="live-sub">Cambio</button><button class="btn" data-action="stats-match">Riepilogo</button><button class="btn" data-action="live-endset">Fine set</button></div>
+    <div class="ls-last">${e?`Ultima: <b>${e.a?esc(athShort(e.a)):'squadra'}</b> · ${esc(evLabel(e))} (${e.noi}-${e.loro})`:''}</div>
+  </div></div>`;
+}
 function viewPresenze(){
   const c=getCal(), rec=db.trainings.filter(isRecorded).length;
   return `<section>
@@ -5984,6 +6121,7 @@ function distSelectHTML(){
    Eventi
    ============================================================ */
 const actions={
+  'live-mode': b=>{ const m=getMatch(ui.matchId); if(!m) return; const L=getStats(m).live; L.mode=b.dataset.v; setOpz('scout', b.dataset.v); ui.livePick=null; touchMatch(m); rerenderLive(); toast(b.dataset.v==='simple'?'Statistiche semplici: battuta, ricezione, attacco':'Statistiche complete'); },
   'inj-edit': b=>openInjEdit(b.dataset.a, b.dataset.i),
   'inj-save': ()=>injSave(false),
   'inj-del': ()=>{ if(confirm('Eliminare questo infortunio?')) injSave(true); },
@@ -6117,7 +6255,7 @@ const actions={
   'cm-today': ()=>{ ui.cmonth=todayISO().slice(0,7); render(); },
   'hero-wa': b=>{ window.open('https://wa.me/?text='+encodeURIComponent(waText(getMatch(b.dataset.id))), '_blank'); },
   'hero-live': b=>{ ui.matchId=b.dataset.id; actions['live-open'](); },
-  'theme-set': b=>{ try{ localStorage.setItem('vs-theme', b.dataset.v); }catch(e){} applyTheme(); render(); },
+  'theme-set': b=>{ try{ localStorage.setItem('vd-theme', b.dataset.v); }catch(e){} applyTheme(); render(); },
   'brand-sw': b=>{ db.settings[b.dataset.k]=b.dataset.v; saveBrand(); },
   'brand-reset': ()=>{ db.settings.colore=''; db.settings.accento=''; saveBrand(); },
   'logo-pick': ()=>pickImage(url=>setLogo(url)),
@@ -6335,7 +6473,7 @@ document.addEventListener('drop', e=>{
 });
 document.addEventListener('dragend', ()=>{ dragUid=null; $$('.item').forEach(x=>{ x.classList.remove('dragging','drop-before','drop-after'); x.draggable=false; }); });
 
-$('#app').innerHTML='<div class="empty">Caricamento di Volleysched…</div>';
+$('#app').innerHTML='<div class="empty">Caricamento di Volleydesk…</div>';
 (async ()=>{
   try{
     await Store.init();
@@ -6349,7 +6487,7 @@ $('#app').innerHTML='<div class="empty">Caricamento di Volleysched…</div>';
     render(); navSync(); setTimeout(autoVerCheck, 3000);
   }catch(e){
     console.error(e);
-    $('#app').innerHTML=`<div class="empty" style="text-align:left;max-width:640px;margin:40px auto"><h2 style="margin-bottom:8px">Volleysched non si è aperto</h2>
+    $('#app').innerHTML=`<div class="empty" style="text-align:left;max-width:640px;margin:40px auto"><h2 style="margin-bottom:8px">Volleydesk non si è aperto</h2>
     <p>Il browser non permette di usare l'archivio dei dati. Succede, per esempio, nelle finestre di navigazione in incognito. Apri l'app in una finestra normale.</p>
     <p class="muted" style="font-size:13px">Dettaglio: ${esc(e.message||e)}</p></div>`;
   }
@@ -6377,5 +6515,7 @@ if('serviceWorker' in navigator && location.protocol!=='file:'){
   navigator.serviceWorker.addEventListener('controllerchange', ()=>{ if(reloaded || !hadController) return; reloaded=true; location.reload(); });
 }
 </script>
+<script src="societa.js"></script>
+<script src="accessi.js"></script>
 </body>
 </html>

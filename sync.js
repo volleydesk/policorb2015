@@ -1,5 +1,5 @@
 /* ==================================================================
-   Volleysched – sincronizzazione con un archivio GitHub privato
+   Volleydesk – sincronizzazione con un archivio GitHub privato
    Nell'archivio online:
      dati.json      tutte le schede (senza immagini) + lapidi + impostazioni
      img/<hash>.png le immagini degli esercizi e degli atleti, una per file
@@ -66,8 +66,8 @@ const Sync = (() => {
     }
   }
   async function initRepo(c = cfg) {
-    await gh('/contents/README.md', { method: 'PUT', body: { message: 'Archivio di Volleysched', branch: c.branch,
-      content: b64utf8('# Dati di Volleysched\n\nQuesto archivio privato contiene i dati della app (dati.json e le immagini nella cartella img). Non modificarlo a mano.\n') } }, c);
+    await gh('/contents/README.md', { method: 'PUT', body: { message: 'Archivio di Volleydesk', branch: c.branch,
+      content: b64utf8('# Dati di Volleydesk\n\nQuesto archivio privato contiene i dati della app (dati.json e le immagini nella cartella img). Non modificarlo a mano.\n') } }, c);
   }
   async function readRemote(h, c = cfg) {
     const empty = { doc: { collections: {}, tombs: {}, settings: { values: {}, _mk: {} } }, imgs: new Map(), datiPath: false };
@@ -86,18 +86,18 @@ const Sync = (() => {
     doc.collections = doc.collections || {}; doc.tombs = doc.tombs || {}; doc.settings = doc.settings || { values: {}, _mk: {} };
     return { doc, imgs, datiPath: true };
   }
-  async function fetchImg(ref, imgs) {
+  async function fetchImg(ref, imgs, c = cfg) {
     if (imgCache.has(ref)) return imgCache.get(ref);
     const sha = imgs.get(ref); if (!sha) return null;
-    const b = await gh('/git/blobs/' + sha);
+    const b = await gh('/git/blobs/' + sha, {}, c);
     const url = 'data:' + (MIME[ref.split('.').pop()] || 'application/octet-stream') + ';base64,' + b.content.replace(/\s/g, '');
     imgCache.set(ref, url); refMemo.set(url, ref); return url;
   }
   /* da scheda online (con riferimenti alle immagini) a scheda locale */
-  async function fromRemote(c, r, imgs) {
+  async function fromRemote(c, r, imgs, rc = cfg) {
     const o = Object.assign({}, r);
     const f = c === 'exercises' ? 'image' : c === 'athletes' ? 'avatar' : null;
-    if (f && typeof o[f] === 'string' && o[f].startsWith('img:')) o[f] = (await fetchImg(o[f].slice(4), imgs)) || (f === 'image' ? null : '');
+    if (f && typeof o[f] === 'string' && o[f].startsWith('img:')) o[f] = (await fetchImg(o[f].slice(4), imgs, rc)) || (f === 'image' ? null : '');
     return o;
   }
   async function toRemote(c, r) {
@@ -151,25 +151,10 @@ const Sync = (() => {
     let commit = h.commit;
     if (push) {
       set('syncing', 'Invio delle modifiche…');
-      const referenced = new Set();
-      for (const c of Store.COLS) for (const r of out[c]) for (const f of ['image', 'avatar']) if (typeof r[f] === 'string' && r[f].startsWith('img:')) referenced.add(r[f].slice(4));
-      const missing = [...referenced].filter(ref => !imgs.has(ref));
-      const entries = [];
-      await pool(missing, 4, async ref => {
-        const url = imgCache.get(ref); if (!url) return;
-        const b = await gh('/git/blobs', { method: 'POST', body: { content: url.slice(url.indexOf(',') + 1), encoding: 'base64' } });
-        entries.push({ path: 'img/' + ref, mode: '100644', type: 'blob', sha: b.sha });
-      });
-      for (const ref of imgs.keys()) if (!referenced.has(ref)) entries.push({ path: 'img/' + ref, mode: '100644', type: 'blob', sha: null });
-      const newDoc = { app: 'schedario-pallavolo', formato: 1, aggiornato: new Date().toISOString(), da: deviceName(), collections: Object.assign({}, doc.collections, out), tombs, settings: ms };
-      const blob = await gh('/git/blobs', { method: 'POST', body: { content: b64utf8(JSON.stringify(newDoc)), encoding: 'base64' } });
-      entries.push({ path: 'dati.json', mode: '100644', type: 'blob', sha: blob.sha });
-      const tree = await gh('/git/trees', { method: 'POST', body: { base_tree: h.tree, tree: entries } });
-      const cm = await gh('/git/commits', { method: 'POST', body: { message: 'Modifiche dal ' + deviceName(), tree: tree.sha, parents: [h.commit] } });
-      try { await gh('/git/refs/heads/' + encodeURIComponent(cfg.branch), { method: 'PATCH', body: { sha: cm.sha, force: false } }); }
-      catch (e) { if (e.status === 422 || e.status === 409) { const er = new Error('conflict'); er.conflict = true; throw er; } throw e; }
-      commit = cm.sha;
+      commit = await commitDoc(cfg, h, imgs, { app: 'schedario-pallavolo', formato: 1, aggiornato: new Date().toISOString(), da: deviceName(),
+        ambito: doc.ambito, collections: Object.assign({}, doc.collections, out), tombs, settings: ms }, 'Modifiche dal ' + deviceName());
     }
+    if (doc.ambito && JSON.stringify(doc.ambito) !== JSON.stringify(Store.getMeta('ambito') || null)) await Store.setMeta('ambito', doc.ambito);
     // porta sul dispositivo le schede più recenti arrivate dall'archivio online
     if (toLocal.puts.length) set('syncing', 'Ricezione delle modifiche…');
     const puts = await pool(toLocal.puts, 6, async ([c, r]) => [c, await fromRemote(c, r, imgs)]);
@@ -178,6 +163,119 @@ const Sync = (() => {
     await Store.setMeta('syncState', { commit, seq: snap.seq, at: Date.now() });
     return changed;
   }
+  /* scrive una nuova versione di dati.json (e le immagini che mancano) in un unico salvataggio */
+  async function commitDoc(c, h, imgs, newDoc, message) {
+    const referenced = new Set();
+    for (const L of Object.values(newDoc.collections)) for (const r of L || []) for (const f of ['image', 'avatar']) if (typeof r[f] === 'string' && r[f].startsWith('img:')) referenced.add(r[f].slice(4));
+    const missing = [...referenced].filter(ref => !imgs.has(ref));
+    const entries = [];
+    await pool(missing, 4, async ref => {
+      const url = imgCache.get(ref); if (!url) return;
+      const b = await gh('/git/blobs', { method: 'POST', body: { content: url.slice(url.indexOf(',') + 1), encoding: 'base64' } }, c);
+      entries.push({ path: 'img/' + ref, mode: '100644', type: 'blob', sha: b.sha });
+    });
+    for (const ref of imgs.keys()) if (!referenced.has(ref)) entries.push({ path: 'img/' + ref, mode: '100644', type: 'blob', sha: null });
+    const blob = await gh('/git/blobs', { method: 'POST', body: { content: b64utf8(JSON.stringify(newDoc)), encoding: 'base64' } }, c);
+    entries.push({ path: 'dati.json', mode: '100644', type: 'blob', sha: blob.sha });
+    if (!h.tree) h.tree = (await gh('/git/commits/' + h.commit, {}, c)).tree.sha;
+    const tree = await gh('/git/trees', { method: 'POST', body: { base_tree: h.tree, tree: entries } }, c);
+    const cm = await gh('/git/commits', { method: 'POST', body: { message, tree: tree.sha, parents: [h.commit] } }, c);
+    try { await gh('/git/refs/heads/' + encodeURIComponent(c.branch), { method: 'PATCH', body: { sha: cm.sha, force: false } }, c); }
+    catch (e) { if (e.status === 422 || e.status === 409) { const er = new Error('conflict'); er.conflict = true; throw er; } throw e; }
+    return cm.sha;
+  }
+
+  /* ---------------------------------------------------------------- archivi delle squadre (li aggiorna la segreteria)
+     Ogni squadra può avere un archivio privato suo, a cui l'allenatore accede con un codice
+     valido solo lì: GitHub gli impedisce di leggere l'archivio della società.
+     Il dispositivo della segreteria fa da tramite: scrive nell'archivio della squadra solo
+     le schede di quella squadra (senza dati sensibili) e riporta qui le modifiche degli allenatori. */
+  const TEAM_COLS = ['exercises', 'sessions', 'athletes', 'matches', 'trainings', 'notes'];
+  const HUBV = 1;
+  let hub = null;                 // funzioni fornite dall'app (accessi.js)
+  const teamState = {};           // id squadra -> {status, msg, at}
+  function setTeam(id, st) { teamState[id] = Object.assign({}, teamState[id], st, st.status === 'ok' ? { at: Date.now(), msg: '' } : {}); listeners.forEach(f => f(state)); }
+  async function teamCfg(t) {
+    const c = { owner: t.owner || cfg.owner, repo: t.repo, token: cfg.token, branch: t.branch || '' };
+    if (c.owner.toLowerCase() === cfg.owner.toLowerCase() && c.repo.toLowerCase() === cfg.repo.toLowerCase()) throw new GhError("L'archivio della squadra non può essere quello della società.", 400);
+    if (!c.branch) {
+      const m = Store.getMeta('teamSync:' + t.id) || {};
+      if (m.branch && m.repo === c.owner + '/' + c.repo) c.branch = m.branch;
+      else { const r = await gh('', {}, c); if (r.permissions && r.permissions.push === false) throw new GhError('Il codice della segreteria può solo leggere questo archivio.', 403); c.branch = r.default_branch || 'main'; }
+    }
+    return c;
+  }
+  async function syncTeam(t) {
+    const c = await teamCfg(t), key = 'teamSync:' + t.id, full = c.owner + '/' + c.repo;
+    let last = Store.getMeta(key) || {}; if (last.repo !== full) last = {};
+    const snap = Store.snapshot();
+    let h = await head(c);
+    if (h && h.commit === last.commit && snap.seq === last.seq && last.v === HUBV && last.setv === hub.settingsKey(t.id)) return 0;
+    if (!h) { await initRepo(c); h = await head(c); }
+    const { doc, imgs } = await readRemote(h, c);
+    const hasData = Object.values(doc.collections).some(L => (L || []).length);
+    if (doc.ambito && doc.ambito.id !== t.id) throw new GhError('Questo archivio è già usato per un\'altra squadra («' + (doc.ambito.nome || '?') + '»).', 400);
+    if (!doc.ambito && hasData) throw new GhError('Questo archivio contiene già altri dati: usa un archivio nuovo e vuoto per la squadra.', 400);
+    const rt = doc.tombs || {}, tombs = Object.assign({}, rt), hubT = Object.assign({}, last.hubTombs);
+    const out = {}, puts = [], dels = [], adoptQ = [];
+    let push = !doc.ambito;
+    for (const col of TEAM_COLS) {
+      const R = new Map((doc.collections[col] || []).map(r => [r.id, r])), L = snap[col];
+      const mine = [...L.values()].filter(r => hub.belongs(col, r, t.id)).map(r => r.id);
+      out[col] = [];
+      for (const id of new Set([...R.keys(), ...mine])) {
+        const k = col + ':' + id, l = L.get(id), r = R.get(id), lt = snap.tombs[k] || 0, tt = rt[k] || 0;
+        if (lt && !l) { if (tt < lt) { tombs[k] = lt; push = true; } if (r) push = true; continue; }       // eliminata dalla società
+        if (l && !hub.belongs(col, l, t.id)) {                                                       // non è (più) di questa squadra
+          if (r) push = true;
+          if (!tt) { tombs[k] = Date.now(); hubT[k] = tombs[k]; push = true; }
+          continue;
+        }
+        if (!l) { if (r && !(tt >= (r._m || 0))) { adoptQ.push([col, r, null]); out[col].push(r); } continue; }   // nuova, creata dall'allenatore
+        let lm = l._m || 0; const rm = r ? (r._m || 0) : -1;
+        if (tt && tt >= lm && tt >= rm) {
+          if (!hubT[k]) { const res = hub.coachDelete(col, l, t.id); if (res) puts.push([col, res]); else dels.push([col, id]); continue; }   // eliminata dall'allenatore
+          lm = tt + 1; delete hubT[k];                                                                 // torna nella squadra dopo esserne uscita
+        }
+        if (lm >= rm) { const o = await toRemote(col, hub.strip(col, l)); o._m = lm; out[col].push(o); if (!r || rm !== lm) push = true; }
+        else { out[col].push(r); adoptQ.push([col, r, l]); }
+      }
+    }
+    // impostazioni della squadra: confronto a tre (ultimo invio, dispositivo, archivio della squadra)
+    const lv = hub.teamSettings(t.id), sent = last.sent || {}, rs = doc.settings || { values: {}, _mk: {} };
+    const ms = { values: Object.assign({}, rs.values), _mk: Object.assign({}, rs._mk) }, patch = {}, nowSent = {};
+    for (const k of Object.keys(lv)) {
+      const a = lv[k] == null ? '' : String(lv[k]), b = rs.values[k] == null ? '' : String(rs.values[k]);
+      if (a === b) { nowSent[k] = a; continue; }
+      if (k in sent && sent[k] === a) { patch[k] = b; nowSent[k] = b; }                               // cambiata dall'allenatore
+      else { ms.values[k] = a; ms._mk[k] = Date.now(); nowSent[k] = a; push = true; }
+    }
+    if (doc.ambito && doc.ambito.nome !== t.nome) push = true;
+    let commit = h.commit;
+    if (push) {
+      for (const k of Object.keys(rt)) if (!TEAM_COLS.includes(k.split(':')[0])) delete tombs[k];
+      commit = await commitDoc(c, h, imgs, { app: 'schedario-pallavolo', formato: 1, aggiornato: new Date().toISOString(), da: 'segreteria',
+        ambito: { tipo: 'squadra', id: t.id, nome: t.nome || '' }, collections: out, tombs, settings: ms }, 'Aggiornamento dalla segreteria');
+    }
+    for (const [col, r, l] of adoptQ) puts.push([col, hub.adopt(col, await fromRemote(col, r, imgs, c), l, t.id)]);
+    const n = await Store.applyTeam(puts, dels);
+    if (Object.keys(patch).length) await hub.setTeamSettings(t.id, patch);
+    await Store.setMeta(key, { repo: full, branch: c.branch, commit, seq: Store.seq(), v: HUBV, hubTombs: hubT, sent: nowSent, setv: hub.settingsKey(t.id) });
+    return n + Object.keys(patch).length;
+  }
+  async function syncTeams() {
+    if (!hub || !cfg) return 0;
+    let n = 0;
+    for (const t of hub.teams()) {
+      if (!t.repo) continue;
+      try { setTeam(t.id, { status: 'syncing' }); let tries = 0;
+        for (;;) { try { n += await syncTeam(t); break; } catch (e) { if (e.conflict && ++tries < 4) continue; throw e; } }
+        setTeam(t.id, { status: 'ok' });
+      } catch (e) { console.error(e); setTeam(t.id, { status: e.status === 0 ? 'offline' : 'error', msg: e.message || String(e) }); }
+    }
+    return n;
+  }
+
   async function run() {
     if (!cfg) return;
     if (running) { again = true; return running; }
@@ -191,6 +289,7 @@ const Sync = (() => {
             try { await syncOnce(); break; }
             catch (e) { if (e.conflict && ++tries < 4) continue; throw e; }
           }
+          if (await syncTeams()) again = true;
           const st = Store.getMeta('syncState') || {};
           set(Store.seq() === st.seq ? 'ok' : 'pending', '');
           if (Store.seq() !== st.seq) again = true;
@@ -219,9 +318,9 @@ const Sync = (() => {
     if (repo.permissions && repo.permissions.push === false) throw new GhError('Il codice di accesso permette solo di leggere: serve "Contents: Read and write".', 403);
     c.branch = repo.default_branch || 'main';
     const h = await head(c);
-    let count = 0;
-    if (h) { const { doc } = await readRemote(h, c); count = Store.COLS.reduce((n, k) => n + (doc.collections[k] || []).length, 0); }
-    return { cfg: c, private: !!repo.private, remoteCount: count };
+    let count = 0, ambito = null;
+    if (h) { const { doc } = await readRemote(h, c); count = Store.COLS.reduce((n, k) => n + (doc.collections[k] || []).length, 0); ambito = doc.ambito || null; }
+    return { cfg: c, private: !!repo.private, remoteCount: count, ambito };
   }
   async function connect(c, replaceLocal) {
     cfg = c;
@@ -239,7 +338,7 @@ const Sync = (() => {
     start();
     return run();
   }
-  async function disconnect() { cfg = null; clearInterval(timer); await Store.setMeta('syncCfg', null); set('off'); }
+  async function disconnect() { cfg = null; clearInterval(timer); await Store.setMeta('syncCfg', null); await Store.setMeta('ambito', null); set('off'); }
   function start() {
     clearInterval(timer);
     timer = setInterval(() => { if (document.visibilityState === 'visible') run(); }, 60000);
@@ -252,5 +351,9 @@ const Sync = (() => {
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') run(); else if (state.status === 'pending') run(); });
     if (cfg) { start(); set('pending'); run(); } else set('off');
   }
-  return { init, run, probe, connect, disconnect, onStatus: f => { listeners.add(f); f(state); }, status: () => state, config: () => cfg && { owner: cfg.owner, repo: cfg.repo } };
+  return { init, run, probe, connect, disconnect, setHub: h => { hub = h; }, teamStatus: () => Object.assign({}, teamState),
+    checkTeamRepo: async t => { if (!cfg) throw new GhError("Prima collega l'archivio della società.", 400); const c = await teamCfg(t); const h = await head(c); const { doc } = await readRemote(h, c);
+      if (doc.ambito && doc.ambito.id !== t.id) throw new GhError('Questo archivio è già usato per un\'altra squadra («' + (doc.ambito.nome || '?') + '»).', 400);
+      if (!doc.ambito && Object.values(doc.collections).some(L => (L || []).length)) throw new GhError('Questo archivio contiene già altri dati: usa un archivio nuovo e vuoto per la squadra.', 400);
+      return true; }, onStatus: f => { listeners.add(f); f(state); }, status: () => state, config: () => cfg && { owner: cfg.owner, repo: cfg.repo } };
 })();

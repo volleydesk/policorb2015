@@ -1,5 +1,5 @@
 /* ==================================================================
-   Volleysched – archivio locale nel browser (IndexedDB)
+   Volleydesk – archivio locale nel browser (IndexedDB)
    Fa le stesse cose che faceva il programma Python (app.py):
    l'interfaccia chiama Store.api(metodo, indirizzo, dati) come prima
    chiamava il server.
@@ -10,12 +10,12 @@
    ================================================================== */
 "use strict";
 const Store = (() => {
-  const DBNAME = 'schedario-pallavolo', VERSION = 2;
-  const COLS = ['exercises', 'sessions', 'athletes', 'matches', 'trainings', 'notes'];
-  const SETTING_KEYS = ['squadra', 'allenatore', 'noteGenerali', 'calendarioAllenamenti', 'colore', 'accento', 'logo', 'campionati', 'preferiti', 'licenza', 'provaDal', 'opzioni', 'squadre'];
+  const DBNAME = 'volleydesk', VERSION = 3;
+  const COLS = ['exercises', 'sessions', 'athletes', 'matches', 'trainings', 'notes', 'payments', 'ledger', 'deadlines', 'staff', 'inventory'];
+  const SETTING_KEYS = ['squadra', 'allenatore', 'noteGenerali', 'calendarioAllenamenti', 'colore', 'accento', 'logo', 'campionati', 'preferiti', 'licenza', 'provaDal', 'opzioni', 'squadre', 'societa', 'accessi'];
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/, TIME_RE = /^\d{1,2}:\d{2}$/;
   let idb = null;
-  const mem = { exercises: new Map(), sessions: new Map(), athletes: new Map(), matches: new Map(), trainings: new Map(), notes: new Map() };
+  const mem = {}; COLS.forEach(c => mem[c] = new Map());
   let settings = { values: {}, _mk: {} };
   let tombs = {};          // "collezione:id" -> momento dell'eliminazione
   let meta = {};           // altre informazioni (inizializzato, configurazione sincronizzazione, ...)
@@ -108,13 +108,14 @@ const Store = (() => {
       obiettivo: s(x.obiettivo), note: s(x.note), items,
       createdAt: (old && old.createdAt) || x.createdAt || Date.now(), updatedAt: x.updatedAt || Date.now() };
   }
-  const AT_FIELDS = ['nome', 'cognome', 'cellulare', 'ruolo', 'ruolo2', 'sesso', 'dataNascita', 'scadenzaVisita', 'scadenzaDocumento', 'taglia', 'note', 'numeroMaglia', 'numeroDocumento', 'avatar'];
+  const AT_FIELDS = ['nome', 'cognome', 'cellulare', 'ruolo', 'ruolo2', 'sesso', 'dataNascita', 'scadenzaVisita', 'scadenzaDocumento', 'taglia', 'note', 'numeroMaglia', 'numeroDocumento', 'avatar',
+    /* dati per la società */ 'codiceFiscale', 'email', 'indirizzo', 'luogoNascita', 'genitore', 'cfGenitore', 'telGenitore', 'emailGenitore', 'tessera', 'scadenzaTessera', 'privacy', 'consensoFoto', 'certificato'];
   function normAt(a, old) {
     if (!(s(a.nome).trim() || s(a.cognome).trim())) throw new Error('Inserisci almeno il nome o il cognome');
     const r = { id: s(a.id) };
     for (const k of AT_FIELDS) {
       const v = s(a[k]).trim();
-      if (['dataNascita', 'scadenzaVisita', 'scadenzaDocumento'].includes(k) && v && !DATE_RE.test(v)) throw new Error('Data non valida: ' + v);
+      if (['dataNascita', 'scadenzaVisita', 'scadenzaDocumento', 'scadenzaTessera'].includes(k) && v && !DATE_RE.test(v)) throw new Error('Data non valida: ' + v);
       r[k] = v;
     }
     if (r.avatar.length > 500000) throw new Error("Immagine dell'atleta troppo grande");
@@ -160,7 +161,55 @@ const Store = (() => {
     return { id: s(n.id), squadra: s(n.squadra), titolo, testo, colore: s(n.colore), fissata: [true, 1, '1', 'true'].includes(n.fissata), etichetta: s(n.etichetta).trim(),
       createdAt: (old && old.createdAt) || n.createdAt || Date.now(), updatedAt: n.updatedAt || Date.now() };
   }
-  const NORM = { exercises: normEx, sessions: normSess, athletes: normAt, matches: normMatch, trainings: normTr, notes: normNote };
+  /* ---------------------------------------------------------------- società */
+  const money = v => { if (v === null || v === undefined || v === '') return 0; const n = parseFloat(String(v).replace(/\s|€/g, '').replace(',', '.')); return isNaN(n) ? 0 : Math.round(n * 100) / 100; };
+  const dateOrEmpty = (v, what) => { v = s(v).trim(); if (v && !DATE_RE.test(v)) throw new Error('Data non valida' + (what ? ' (' + what + ')' : '') + ': ' + v); return v; };
+  const yes = v => [true, 1, '1', 'true', 'si', 'sì'].includes(v);
+  const stamp = (r, x, old) => { r.createdAt = (old && old.createdAt) || x.createdAt || Date.now(); r.updatedAt = x.updatedAt || Date.now(); return r; };
+  /* una quota (o rata) da incassare da un atleta, con gli incassi registrati */
+  function normPay(p, old) {
+    if (!s(p.atletaId)) throw new Error("Manca l'atleta della quota");
+    const r = { id: s(p.id), atletaId: s(p.atletaId), stagione: s(p.stagione).trim(), voce: s(p.voce).trim() || 'Quota', descrizione: s(p.descrizione).trim(),
+      importo: money(p.importo), scadenza: dateOrEmpty(p.scadenza, 'scadenza'), note: s(p.note), pianoId: s(p.pianoId), annullata: yes(p.annullata), sconto: s(p.sconto).trim() };
+    r.incassi = (Array.isArray(p.incassi) ? p.incassi : []).filter(x => x && typeof x === 'object').map(x => ({
+      id: s(x.id) || newId('in'), data: dateOrEmpty(x.data, 'incasso'), importo: money(x.importo), metodo: s(x.metodo).trim(), ricevuta: s(x.ricevuta).trim(),
+      pagatoDa: s(x.pagatoDa).trim(), cfPagante: s(x.cfPagante).trim().toUpperCase(), note: s(x.note) })).filter(x => x.importo !== 0);
+    return stamp(r, p, old);
+  }
+  /* prima nota: entrate e uscite che non sono quote degli atleti */
+  function normLedger(m, old) {
+    const data = dateOrEmpty(m.data, 'movimento'); if (!data) throw new Error('Inserisci la data del movimento');
+    const importo = money(m.importo); if (!importo) throw new Error("Inserisci l'importo");
+    return stamp({ id: s(m.id), data, tipo: m.tipo === 'U' ? 'U' : 'E', categoria: s(m.categoria).trim(), descrizione: s(m.descrizione).trim(), importo: Math.abs(importo),
+      metodo: s(m.metodo).trim(), controparte: s(m.controparte).trim(), documento: s(m.documento).trim(), stagione: s(m.stagione).trim(), squadra: s(m.squadra), note: s(m.note) }, m, old);
+  }
+  const RICORRENZE = ['', 'mensile', 'bimestrale', 'trimestrale', 'semestrale', 'annuale'];
+  function normDeadline(d, old) {
+    const titolo = s(d.titolo).trim(); if (!titolo) throw new Error('Scrivi cosa scade');
+    const data = dateOrEmpty(d.data, 'scadenza'); if (!data) throw new Error('Inserisci la data di scadenza');
+    return stamp({ id: s(d.id), titolo, data, categoria: s(d.categoria).trim(), importo: d.importo === '' || d.importo == null ? '' : money(d.importo),
+      ricorrenza: RICORRENZE.includes(s(d.ricorrenza)) ? s(d.ricorrenza) : '', fatto: yes(d.fatto), fattoIl: dateOrEmpty(d.fattoIl), avviso: toIntOrNull(d.avviso) ?? 7, note: s(d.note) }, d, old);
+  }
+  const STAFF_FIELDS = ['nome', 'cognome', 'ruolo', 'cellulare', 'email', 'codiceFiscale', 'tessera', 'qualifica', 'compenso', 'note', 'iban'];
+  function normStaff(x, old) {
+    if (!(s(x.nome).trim() || s(x.cognome).trim())) throw new Error('Inserisci almeno il nome o il cognome');
+    const r = { id: s(x.id) }; for (const k of STAFF_FIELDS) r[k] = k === 'note' ? s(x[k]) : s(x[k]).trim();
+    r.scadenzaTessera = dateOrEmpty(x.scadenzaTessera, 'tessera'); r.scadenzaVisita = dateOrEmpty(x.scadenzaVisita, 'visita');
+    r.scadenzaQualifica = dateOrEmpty(x.scadenzaQualifica, 'qualifica'); r.scadenzaCasellario = dateOrEmpty(x.scadenzaCasellario, 'casellario');
+    r.attivo = x.attivo === undefined ? true : yes(x.attivo);
+    r.squadre = Array.isArray(x.squadre) ? x.squadre.filter(Boolean).map(String) : [];
+    return stamp(r, x, old);
+  }
+  function normInv(x, old) {
+    const articolo = s(x.articolo).trim(); if (!articolo) throw new Error("Scrivi il nome dell'articolo");
+    const r = { id: s(x.id), articolo, categoria: s(x.categoria).trim(), taglia: s(x.taglia).trim(), quantita: toIntOrNull(x.quantita) ?? 0, costo: x.costo === '' || x.costo == null ? '' : money(x.costo),
+      sogliaMin: toIntOrNull(x.sogliaMin) ?? '', note: s(x.note) };
+    r.consegne = (Array.isArray(x.consegne) ? x.consegne : []).filter(c => c && typeof c === 'object').map(c => ({ id: s(c.id) || newId('cg'), atletaId: s(c.atletaId),
+      a: s(c.a).trim(), data: dateOrEmpty(c.data, 'consegna'), quantita: toIntOrNull(c.quantita) || 1, restituito: yes(c.restituito), resoIl: dateOrEmpty(c.resoIl), note: s(c.note) }));
+    return stamp(r, x, old);
+  }
+  const NORM = { exercises: normEx, sessions: normSess, athletes: normAt, matches: normMatch, trainings: normTr, notes: normNote,
+    payments: normPay, ledger: normLedger, deadlines: normDeadline, staff: normStaff, inventory: normInv };
   function prep(c, body) {
     const old = mem[c].get(body.id);
     const r = NORM[c](body, old);
@@ -178,14 +227,18 @@ const Store = (() => {
     const ma = [...mem.matches.values()].sort((a, b) => ((a.data || '') + (a.ora || '')).localeCompare((b.data || '') + (b.ora || '')));
     const tr = [...mem.trainings.values()].sort((a, b) => ((a.data || '') + (a.ora || '')).localeCompare((b.data || '') + (b.ora || '')));
     const no = [...mem.notes.values()].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    const byDate = k => (a, b) => (s(a[k])).localeCompare(s(b[k]));
     return { exercises: ex.map(strip), sessions: se.map(strip), athletes: at.map(strip), matches: ma.map(strip), trainings: tr.map(strip), notes: no.map(strip),
+      payments: [...mem.payments.values()].sort(byDate('scadenza')).map(strip), ledger: [...mem.ledger.values()].sort(byDate('data')).map(strip),
+      deadlines: [...mem.deadlines.values()].sort(byDate('data')).map(strip), staff: [...mem.staff.values()].sort((a, b) => coll(a.cognome, b.cognome) || coll(a.nome, b.nome)).map(strip),
+      inventory: [...mem.inventory.values()].sort((a, b) => coll(a.categoria, b.categoria) || coll(a.articolo, b.articolo)).map(strip),
       settings: getSettings(), info: {} };
   }
   function getSettings() {
     const v = settings.values || {};
     return { squadra: v.squadra || '', allenatore: v.allenatore || '',
       noteGenerali: v.noteGenerali ?? (typeof DEFAULT_NOTE !== 'undefined' ? DEFAULT_NOTE : DEFAULT_NOTE_FALLBACK),
-      calendarioAllenamenti: v.calendarioAllenamenti || '', colore: v.colore || '', accento: v.accento || '', logo: v.logo || '', campionati: v.campionati || '', preferiti: v.preferiti || '', licenza: v.licenza || '', provaDal: v.provaDal || '', opzioni: v.opzioni || '', squadre: v.squadre || '' };
+      calendarioAllenamenti: v.calendarioAllenamenti || '', colore: v.colore || '', accento: v.accento || '', logo: v.logo || '', campionati: v.campionati || '', preferiti: v.preferiti || '', licenza: v.licenza || '', provaDal: v.provaDal || '', opzioni: v.opzioni || '', squadre: v.squadre || '', societa: v.societa || '', accessi: v.accessi || '' };
   }
   async function saveSettings(st) {
     const t = now(); let changed = false;
@@ -288,6 +341,11 @@ const Store = (() => {
       a => !!(s(a.nome).trim() || s(a.cognome).trim()));
     generic('matches', data.matches, (y, m) => !!m.data && s(y.data) === s(m.data) && lc(y.avversario) === lc(m.avversario), () => true);
     generic('trainings', data.trainings, (y, t) => s(y.data) === s(t.data) && s(y.ora) === s(t.ora), t => DATE_RE.test(s(t.data)));
+    generic('payments', data.payments, (y, p) => s(y.atletaId) === s(p.atletaId) && s(y.descrizione) === s(p.descrizione) && s(y.scadenza) === s(p.scadenza), p => !!s(p.atletaId));
+    generic('ledger', data.ledger, (y, m) => s(y.data) === s(m.data) && money(y.importo) === money(m.importo) && s(y.descrizione) === s(m.descrizione), m => DATE_RE.test(s(m.data)));
+    generic('deadlines', data.deadlines, (y, d) => s(y.titolo) === s(d.titolo) && s(y.data) === s(d.data), d => !!s(d.titolo).trim() && DATE_RE.test(s(d.data)));
+    generic('staff', data.staff, (y, a) => lc(y.nome) === lc(a.nome) && lc(y.cognome) === lc(a.cognome), a => !!(s(a.nome).trim() || s(a.cognome).trim()));
+    generic('inventory', data.inventory, (y, x) => lc(y.articolo) === lc(x.articolo) && s(y.taglia) === s(x.taglia), x => !!s(x.articolo).trim());
     generic('notes', data.notes, (y, n) => s(y.titolo) === s(n.titolo) && s(y.testo) === s(n.testo), n => !!(s(n.titolo).trim() || s(n.testo).trim()));
     // un id messo e poi tolto nella stessa importazione: vale l'ultima operazione
     const finalPuts = new Map(), delSet = new Set();
@@ -298,7 +356,8 @@ const Store = (() => {
   }
 
   /* ---------------------------------------------------------------- "server" */
-  const ROUTES = [[/^\/api\/esercizi\/([\w-]+)$/, 'exercises'], [/^\/api\/sessioni\/([\w-]+)$/, 'sessions'], [/^\/api\/atleti\/([\w-]+)$/, 'athletes'],
+  const ROUTES = [[/^\/api\/quote\/([\w-]+)$/, 'payments'], [/^\/api\/movimenti\/([\w-]+)$/, 'ledger'], [/^\/api\/scadenze\/([\w-]+)$/, 'deadlines'],
+    [/^\/api\/staff\/([\w-]+)$/, 'staff'], [/^\/api\/magazzino\/([\w-]+)$/, 'inventory'], [/^\/api\/esercizi\/([\w-]+)$/, 'exercises'], [/^\/api\/sessioni\/([\w-]+)$/, 'sessions'], [/^\/api\/atleti\/([\w-]+)$/, 'athletes'],
     [/^\/api\/partite\/([\w-]+)$/, 'matches'], [/^\/api\/allenamenti\/([\w-]+)$/, 'trainings'], [/^\/api\/note\/([\w-]+)$/, 'notes']];
   function route(url) { for (const [re, c] of ROUTES) { const m = re.exec(url); if (m) return [c, decodeURIComponent(m[1])]; } return [null, null]; }
   async function api(method, url, body) {
@@ -316,6 +375,11 @@ const Store = (() => {
     if (method === 'POST') {
       if (url === '/api/importa') return importData((body && body.data) || {}, (body && body.mode) || 'merge');
       if (url === '/api/allenamenti-multipli') { const puts = (body.items || []).map(t => ['trainings', prep('trainings', t)]); await commitLocal(puts); return { aggiunti: puts.length }; }
+      if (url === '/api/multipli') {   // più schede in un colpo solo: {items:[{c:'payments', r:{...}}]}
+        const puts = (body.items || []).map(x => { if (!COLS.includes(x.c)) throw new Error('Collezione sconosciuta'); return [x.c, prep(x.c, x.r)]; });
+        const dels = (body.dels || []).filter(x => COLS.includes(x.c)).map(x => [x.c, s(x.id)]);
+        await commitLocal(puts, dels); return { salvati: puts.length, eliminati: dels.length };
+      }
       if (url === '/api/ripristina-iniziali') return { aggiunti: await insertMissingSeed(body && body.exercises) };
     }
     throw new Error('Operazione non prevista: ' + method + ' ' + url);
@@ -355,12 +419,46 @@ const Store = (() => {
     await write(puts, dels.filter(([c, id]) => !mem[c].has(id)), { tombs, settings, lastM, seq });
     listeners.forEach(f => { try { f('remote'); } catch (e) { console.error(e); } });
   }
+  /* dati lasciati da Volleysched nello stesso browser (stesso sito): si possono copiare qui una volta */
+  async function legacyInfo() {
+    try {
+      if (indexedDB.databases) { const L = await indexedDB.databases(); if (!L.some(d => d.name === 'schedario-pallavolo')) return null; }
+      else return null;
+      const d = await new Promise((res, rej) => { const r = indexedDB.open('schedario-pallavolo'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); r.onupgradeneeded = () => { try { r.transaction.abort(); } catch (e) {} }; });
+      const names = [...d.objectStoreNames], out = { counts: {}, data: {} };
+      const cols = ['exercises', 'sessions', 'athletes', 'matches', 'trainings', 'notes'].filter(c => names.includes(c));
+      if (!cols.length || !names.includes('meta')) { d.close(); return null; }
+      const t = d.transaction([...cols, 'meta'], 'readonly');
+      for (const c of cols) { out.data[c] = await reqP(t.objectStore(c).getAll()); out.counts[c] = out.data[c].length; }
+      out.settings = await reqP(t.objectStore('meta').get('settings')); d.close();
+      return Object.values(out.counts).some(n => n > 0) ? out : null;
+    } catch (e) { console.warn('Volleysched non letto', e); return null; }
+  }
+  async function importLegacy() {
+    const L = await legacyInfo(); if (!L) throw new Error('Non ho trovato dati di Volleysched in questo browser');
+    const data = Object.assign({}, L.data, { settings: (L.settings && L.settings.values) || {} });
+    return importData(data, 'merge');
+  }
+  /* modifiche arrivate dall'archivio di una squadra (le porta la segreteria):
+     valgono come modifiche locali, così raggiungono anche l'archivio della società */
+  async function applyTeam(puts = [], dels = []) {
+    if (!puts.length && !dels.length) return 0;
+    for (const [c, r] of puts) { mem[c].set(r.id, r); delete tombs[c + ':' + r.id]; lastM = Math.max(lastM, r._m || 0); }
+    const t = now();
+    for (const [c, id] of dels) { mem[c].delete(id); tombs[c + ':' + id] = t; }
+    seq++;
+    await write(puts, dels, { tombs, seq, lastM, settings });
+    listeners.forEach(f => { try { f('remote'); } catch (e) { console.error(e); } });
+    listeners.forEach(f => { try { f('local'); } catch (e) { console.error(e); } });
+    return puts.length + dels.length;
+  }
   function isEmpty() { return COLS.every(c => mem[c].size === 0); }
 
   return {
     COLS, init: async () => { idb = await open(); await loadAll(); }, api, fullState, snapshot, applyRemote, replaceAll, isEmpty,
     getMeta: k => meta[k], setMeta, onChange: f => listeners.add(f), seq: () => seq,
-    insertMissingSeed, seedExercise, prep, commitLocal,
+    insertMissingSeed, seedExercise, prep, commitLocal, legacyInfo, importLegacy, money, applyTeam, getSettings, stamp: () => now(),
+    list: c => [...(mem[c] || new Map()).values()].map(strip),   // una sola collezione (tutte le squadre)
     counts: () => Object.fromEntries(COLS.map(c => [c, mem[c].size]))
   };
 })();

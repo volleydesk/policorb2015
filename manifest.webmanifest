@@ -1,7 +1,7 @@
 {
-  "name": "Volleysched",
-  "short_name": "Volleysched",
-  "description": "Esercizi, sessioni, presenze, partite e atleti",
+  "name": "Volleydesk",
+  "short_name": "Volleydesk",
+  "description": "Gestionale della società di pallavolo: atleti, quote, pagamenti, scadenze, allenamenti e partite",
   "lang": "it",
   "start_url": "./",
   "scope": "./",
