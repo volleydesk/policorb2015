@@ -12,7 +12,7 @@
 const Store = (() => {
   const DBNAME = 'volleydesk', VERSION = 3;
   const COLS = ['exercises', 'sessions', 'athletes', 'matches', 'trainings', 'notes', 'payments', 'ledger', 'deadlines', 'staff', 'inventory'];
-  const SETTING_KEYS = ['squadra', 'allenatore', 'noteGenerali', 'calendarioAllenamenti', 'colore', 'accento', 'logo', 'campionati', 'preferiti', 'licenza', 'provaDal', 'opzioni', 'squadre', 'societa', 'accessi'];
+  const SETTING_KEYS = ['squadra', 'allenatore', 'noteGenerali', 'calendarioAllenamenti', 'colore', 'accento', 'logo', 'campionati', 'preferiti', 'licenza', 'provaDal', 'opzioni', 'squadre', 'societa', 'accessi', 'iscrizioni', 'promemoria'];
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/, TIME_RE = /^\d{1,2}:\d{2}$/;
   let idb = null;
   const mem = {}; COLS.forEach(c => mem[c] = new Map());
@@ -238,7 +238,7 @@ const Store = (() => {
     const v = settings.values || {};
     return { squadra: v.squadra || '', allenatore: v.allenatore || '',
       noteGenerali: v.noteGenerali ?? (typeof DEFAULT_NOTE !== 'undefined' ? DEFAULT_NOTE : DEFAULT_NOTE_FALLBACK),
-      calendarioAllenamenti: v.calendarioAllenamenti || '', colore: v.colore || '', accento: v.accento || '', logo: v.logo || '', campionati: v.campionati || '', preferiti: v.preferiti || '', licenza: v.licenza || '', provaDal: v.provaDal || '', opzioni: v.opzioni || '', squadre: v.squadre || '', societa: v.societa || '', accessi: v.accessi || '' };
+      calendarioAllenamenti: v.calendarioAllenamenti || '', colore: v.colore || '', accento: v.accento || '', logo: v.logo || '', campionati: v.campionati || '', preferiti: v.preferiti || '', licenza: v.licenza || '', provaDal: v.provaDal || '', opzioni: v.opzioni || '', squadre: v.squadre || '', societa: v.societa || '', accessi: v.accessi || '', iscrizioni: v.iscrizioni || '', promemoria: v.promemoria || '' };
   }
   async function saveSettings(st) {
     const t = now(); let changed = false;

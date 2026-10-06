@@ -351,7 +351,19 @@ const Sync = (() => {
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') run(); else if (state.status === 'pending') run(); });
     if (cfg) { start(); set('pending'); run(); } else set('off');
   }
-  return { init, run, probe, connect, disconnect, setHub: h => { hub = h; }, teamStatus: () => Object.assign({}, teamState),
+  /* file nell'archivio della società (per i promemoria automatici) */
+  async function getFile(path) {
+    if (!cfg) throw new GhError("Prima collega l'archivio della società.", 400);
+    try { const r = await gh('/contents/' + path.split('/').map(encodeURIComponent).join('/') + '?ref=' + encodeURIComponent(cfg.branch)); return { sha: r.sha, text: utf8b64(r.content || '') }; }
+    catch (e) { if (e.status === 404) return null; throw e; }
+  }
+  async function putFile(path, text, message) {
+    const cur = await getFile(path);
+    if (cur && cur.text === text) return false;
+    await gh('/contents/' + path.split('/').map(encodeURIComponent).join('/'), { method: 'PUT', body: Object.assign({ message, content: b64utf8(text), branch: cfg.branch }, cur ? { sha: cur.sha } : {}) });
+    return true;
+  }
+  return { init, run, probe, connect, disconnect, getFile, putFile, setHub: h => { hub = h; }, teamStatus: () => Object.assign({}, teamState),
     checkTeamRepo: async t => { if (!cfg) throw new GhError("Prima collega l'archivio della società.", 400); const c = await teamCfg(t); const h = await head(c); const { doc } = await readRemote(h, c);
       if (doc.ambito && doc.ambito.id !== t.id) throw new GhError('Questo archivio è già usato per un\'altra squadra («' + (doc.ambito.nome || '?') + '»).', 400);
       if (!doc.ambito && Object.values(doc.collections).some(L => (L || []).length)) throw new GhError('Questo archivio contiene già altri dati: usa un archivio nuovo e vuoto per la squadra.', 400);

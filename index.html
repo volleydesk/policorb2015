@@ -3138,6 +3138,7 @@ ${gamePanelHTML()}
     <div class="actions">
       <button class="btn" data-action="export">Scarica una copia (.json)…</button>
       <button class="btn" data-action="import">Importa…</button>
+      <button class="btn" data-action="imp-xl">📥 Importa da Excel/CSV…</button>
     </div>
     ${demoBoxHTML()}
     ${resetBoxHTML()}
@@ -3308,7 +3309,7 @@ function exportSelected(){
   if(sel.trainings) out.trainings=sel.athletes?st.trainings:st.trainings.map(t=>Object.assign({}, t, {presenze:{}}));
   if(sel.notes) out.notes=st.notes||[];
   if(sel.societa){ out.payments=st.payments; out.ledger=st.ledger; out.deadlines=st.deadlines; out.staff=st.staff; out.inventory=st.inventory; }
-  if(sel.settings){ const s=Object.assign({}, st.settings); delete s.preferiti; delete s.licenza; delete s.provaDal; out.settings=s; }
+  if(sel.settings){ const s=Object.assign({}, st.settings); delete s.preferiti; delete s.licenza; delete s.provaDal; delete s.iscrizioni; delete s.accessi; delete s.promemoria; out.settings=s; }
   if(!out.exercises.length && !out.sessions.length && !out.athletes && !out.matches && !out.trainings && !out.settings && !out.payments){ alert('Con queste scelte il file sarebbe vuoto (per esempio non hai esercizi preferiti).'); return; }
   const all=EXP_ITEMS.every(([k])=>sel[k]) && o.exMode==='all';
   const name=all?'volleydesk-completo-':(Object.keys(sel).filter(k=>sel[k]).length===1&&sel.exercises?'volleydesk-esercizi-':'volleydesk-');
@@ -5356,7 +5357,7 @@ async function demoClear(){
 }
 
 /* ===== Versione dell'app ===== */
-const APP_VERSION='v4-2026-10-06';
+const APP_VERSION='v5-2026-10-06';
 function verLabel(v){ const m=String(v||'').match(/^v(\d+)-(\d{4})-(\d\d)-(\d\d)/); return m?`${m[1]} del ${+m[4]}/${+m[3]}/${m[2]}`:String(v||'?'); }
 const verNum=v=>{ const m=String(v||'').match(/^v(\d+)/); return m?+m[1]:0; };
 let swReg=null;
@@ -6518,5 +6519,9 @@ if('serviceWorker' in navigator && location.protocol!=='file:'){
 </script>
 <script src="societa.js"></script>
 <script src="accessi.js"></script>
+<script src="squadre.js"></script>
+<script src="importa.js"></script>
+<script src="iscrizioni.js"></script>
+<script src="promemoria.js"></script>
 </body>
 </html>

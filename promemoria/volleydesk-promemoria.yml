@@ -1,0 +1,39 @@
+# Volleydesk – promemoria automatici via email (versione: 1)
+# Gira ogni mattina e manda gli avvisi di quote e visite mediche. Configurazione in Volleydesk → Società → Promemoria.
+name: Promemoria Volleydesk
+on:
+  schedule:
+    - cron: '17 6 * * *'        # ogni giorno alle 6:17 UTC (8:17 d'estate, 7:17 d'inverno in Italia)
+  workflow_dispatch:
+    inputs:
+      prova:
+        description: 'Prova: manda tutto solo alla segreteria'
+        type: boolean
+        default: true
+permissions:
+  contents: write
+concurrency: promemoria
+jobs:
+  invia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Invia i promemoria
+        run: python3 promemoria/promemoria.py
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          PROVA: ${{ github.event_name == 'workflow_dispatch' && inputs.prova && '1' || '' }}
+      - name: Salva il registro degli invii
+        run: |
+          git config user.name "Volleydesk promemoria"
+          git config user.email "promemoria@users.noreply.github.com"
+          git add promemoria/registro.json 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "Registro dei promemoria"
+            for i in 1 2 3; do git pull --rebase && git push && break; sleep 5; done
+          fi

@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Iscrizione</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+:root{--bg:#f3f1ec;--card:#fff;--ink:#1f2a44;--ink2:#4a5570;--muted:#7a8296;--line:#e3ddd2;--acc:#0f766e;--red:#c0283d;--ok:#1b8a4a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+header{background:var(--acc);color:#fff;padding:22px 18px 26px}
+header .in{max-width:720px;margin:0 auto}
+header small{opacity:.85;text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-size:12px}
+header h1{margin:4px 0 0;font-size:24px;line-height:1.2}
+main{max-width:720px;margin:-12px auto 40px;padding:0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--acc);margin:0 0 12px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g .w{grid-column:1/-1}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13.5px;font-weight:600;color:var(--ink2)}
+label.f i{font-style:normal;color:var(--red)}
+input,select,textarea{font:inherit;color:var(--ink);background:#fff;border:1px solid #cfc8bb;border-radius:9px;padding:10px 11px;width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid color-mix(in srgb,var(--acc) 40%,transparent);border-color:var(--acc)}
+.bad input,.bad select{border-color:var(--red);background:#fff6f7}
+.err{color:var(--red);font-size:12.5px;font-weight:600;min-height:0}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;padding:8px 0}
+.chk input{width:20px;height:20px;flex:none;margin-top:2px}
+.note{background:#f6f9f8;border-left:3px solid var(--acc);padding:8px 12px;font-size:14px;color:var(--ink2);border-radius:0 8px 8px 0;margin:0 0 12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #cfc8bb;background:#fff;color:var(--ink);font:inherit;font-weight:700;border-radius:10px;padding:12px 18px;cursor:pointer;text-decoration:none}
+.btn.p{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.wa{background:#25d366;border-color:#25d366;color:#fff}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;word-break:break-all;background:#f6f6f4;border:1px dashed #cfc8bb;border-radius:8px;padding:10px;max-height:120px;overflow:auto}
+.muted{color:var(--muted)}
+.hidden{display:none!important}
+.ok{color:var(--ok)}
+@media (max-width:560px){ .g{grid-template-columns:1fr} header h1{font-size:21px} }
+@media print{ header,.btns,.noprint{display:none!important} body{background:#fff} .card{box-shadow:none;border:1px solid #ccc;break-inside:avoid} }
+</style>
+</head>
+<body>
+<header><div class="in"><small id="h-soc">Iscrizione</small><h1 id="h-title">Modulo di iscrizione</h1></div></header>
+<main>
+<div id="bad" class="card hidden"><h2>Link non valido</h2><p>Questo indirizzo non contiene i dati della società. Chiedi alla segreteria di mandarti di nuovo il link completo.</p></div>
+
+<form id="f" class="hidden" novalidate autocomplete="on">
+  <div class="card" id="intro-card"><p style="margin:0" id="intro"></p><p class="muted" style="margin:8px 0 0;font-size:13.5px">I campi con <span style="color:var(--red)">*</span> sono obbligatori. I dati restano su questo telefono finché non li invii: vengono cifrati e solo la segreteria può leggerli.</p></div>
+
+  <div class="card"><h2>Atleta</h2><div class="g">
+    <label class="f"><span>Nome <i>*</i></span><input name="nome" required autocomplete="off"></label>
+    <label class="f"><span>Cognome <i>*</i></span><input name="cognome" required autocomplete="off"></label>
+    <label class="f"><span>Sesso <i>*</i></span><select name="sesso" required><option value="">—</option><option value="F">Femmina</option><option value="M">Maschio</option></select></label>
+    <label class="f"><span>Data di nascita <i>*</i></span><input type="date" name="dataNascita" required></label>
+    <label class="f">Luogo di nascita<input name="luogoNascita" autocomplete="off"></label>
+    <label class="f"><span>Codice fiscale <i>*</i></span><input name="codiceFiscale" required maxlength="16" style="text-transform:uppercase" autocomplete="off"></label>
+    <label class="f w">Indirizzo di residenza<input name="indirizzo" placeholder="Via, numero, CAP, città" autocomplete="street-address"></label>
+    <label class="f">Cellulare dell'atleta<input type="tel" name="cellulare" autocomplete="off"></label>
+    <label class="f">Email dell'atleta<input type="email" name="email" autocomplete="off"></label>
+    <label class="f" id="sq-wrap"><span>Squadra <i>*</i></span><select name="squadra" id="sq"></select></label>
+    <label class="f">Taglia maglia<select name="taglia"><option value="">—</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>3XL</option></select></label>
+    <label class="f">Scadenza del certificato medico (se ce l'hai già)<input type="date" name="scadenzaVisita"></label>
+    <label class="f w">Allergie, patologie o informazioni utili per gli allenatori<textarea name="note" rows="2"></textarea></label>
+  </div></div>
+
+  <div class="card" id="gen-card"><h2 id="gen-title">Genitore o tutore</h2><p class="note" id="gen-note">Per i minorenni serve un genitore: intestiamo a lui le ricevute (utili per la detrazione nella dichiarazione dei redditi).</p><div class="g">
+    <label class="f"><span>Nome e cognome <i>*</i></span><input name="genNome" autocomplete="name"></label>
+    <label class="f"><span>Codice fiscale <i>*</i></span><input name="genCf" maxlength="16" style="text-transform:uppercase"></label>
+    <label class="f"><span>Cellulare <i>*</i></span><input type="tel" name="genTel" autocomplete="tel"></label>
+    <label class="f">Email<input type="email" name="genEmail" autocomplete="email"></label>
+  </div></div>
+
+  <div class="card"><h2>Consensi</h2>
+    <label class="chk"><input type="checkbox" name="privacy"><span>Ho letto l'<a id="priv-link" href="#" target="_blank" rel="noopener">informativa sul trattamento dei dati personali</a> e acconsento al trattamento dei dati per l'iscrizione e l'attività sportiva. <i style="color:var(--red);font-style:normal">*</i></span></label>
+    <label class="chk"><input type="checkbox" name="foto"><span>Acconsento alla pubblicazione di foto e video dell'atleta durante le attività della società (sito e social).</span></label>
+    <label class="chk"><input type="checkbox" name="regolamento"><span>Mi impegno a rispettare il regolamento della società e a consegnare il certificato medico prima di iniziare gli allenamenti. <i style="color:var(--red);font-style:normal">*</i></span></label>
+    <div class="g" style="margin-top:8px"><label class="f w"><span>Firma: scrivi nome e cognome di chi compila (il genitore, per i minorenni) <i>*</i></span><input name="firma" autocomplete="name"></label></div>
+  </div>
+
+  <div class="card noprint"><div class="err" id="errs"></div>
+    <div class="btns"><button type="submit" class="btn p" id="go">Prepara l'invio</button></div>
+    <p class="muted" style="font-size:13px;margin:10px 0 0">Nella schermata successiva scegli come mandarlo alla segreteria: WhatsApp o email.</p></div>
+</form>
+
+<div id="done" class="hidden">
+  <div class="card"><h2 class="ok">✓ Iscrizione pronta</h2>
+    <p style="margin-top:0">Ora mandala alla segreteria. Il messaggio contiene un codice cifrato: <b>non modificarlo</b>.</p>
+    <div class="btns" style="margin-bottom:12px"><a class="btn wa" id="send-wa" target="_blank" rel="noopener">Invia con WhatsApp</a><a class="btn" id="send-mail">Invia per email</a><button class="btn" id="copy" type="button">Copia il messaggio</button></div>
+    <div class="code" id="code"></div>
+    <p class="muted" style="font-size:13px">Il certificato medico consegnalo alla segreteria come ti indicherà. Se hai sbagliato qualcosa puoi <a href="#" id="back">tornare al modulo</a> e inviarlo di nuovo.</p>
+    <div class="btns"><button class="btn" type="button" onclick="window.print()">Stampa il riepilogo</button></div>
+  </div>
+  <div class="card" id="summary"></div>
+</div>
+</main>
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const b64u=u8=>{ let s=''; for(let i=0;i<u8.length;i+=0x8000) s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000)); return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); };
+const unb64u=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'==='.slice((s.length+3)%4)),c=>c.charCodeAt(0));
+let C=null;
+try{ const h=location.hash.replace(/^#c=/,''); C=JSON.parse(new TextDecoder().decode(unb64u(h))); if(!C || !C.k) C=null; }catch(e){ C=null; }
+if(!C){ $('#bad').classList.remove('hidden'); }
+else{
+  document.title='Iscrizione – '+(C.s||'');
+  $('#h-soc').textContent=C.s||'Iscrizione'; $('#h-title').textContent='Iscrizione'+(C.st?' stagione '+C.st:'');
+  $('#intro').innerHTML=(C.n?esc(C.n):`Compila il modulo per iscriverti a <b>${esc(C.s||'')}</b>.`).replace(/\n/g,'<br>');
+  const T=C.t||[];
+  if(T.length){ $('#sq').innerHTML='<option value="">— scegli —</option>'+T.map(t=>`<option value="${esc(t[0])}">${esc(t[1])}</option>`).join(''); if(T.length===1) $('#sq').value=T[0][0]; }
+  else $('#sq-wrap').classList.add('hidden');
+  if(C.pu) $('#priv-link').href=C.pu; else { $('#priv-link').removeAttribute('href'); $('#priv-link').style.textDecoration='none'; $('#priv-link').style.color='inherit'; }
+  $('#f').classList.remove('hidden');
+}
+/* controllo del codice fiscale (anche con omocodia) */
+function cfOk(cf){
+  cf=String(cf||'').toUpperCase();
+  if(!/^[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]$/.test(cf)) return false;
+  const odd={0:1,1:0,2:5,3:7,4:9,5:13,6:15,7:17,8:19,9:21,A:1,B:0,C:5,D:7,E:9,F:13,G:15,H:17,I:19,J:21,K:2,L:4,M:18,N:20,O:11,P:3,Q:6,R:8,S:12,T:14,U:16,V:10,W:22,X:25,Y:24,Z:23};
+  let s=0; for(let i=0;i<15;i++){ const c=cf[i]; if(i%2===0) s+=odd[c]; else s+=/[0-9]/.test(c)?+c:c.charCodeAt(0)-65; }
+  return String.fromCharCode(65+s%26)===cf[15];
+}
+function age(iso){ const m=/^(\d{4})-(\d\d)-(\d\d)$/.exec(iso||''); if(!m) return null; const t=new Date(); let a=t.getFullYear()-+m[1]; if(t.getMonth()+1<+m[2]||(t.getMonth()+1===+m[2]&&t.getDate()<+m[3])) a--; return a; }
+function updGen(){ const a=age($('#f [name=dataNascita]').value), minor=a!==null&&a<18;
+  $('#gen-title').textContent=minor?'Genitore o tutore':'Chi paga la quota (facoltativo)';
+  $('#gen-note').textContent=minor?'Per i minorenni serve un genitore: intestiamo a lui le ricevute (utili per la detrazione nella dichiarazione dei redditi).':'Compila solo se la quota la paga un\'altra persona.';
+  document.querySelectorAll('#gen-card i').forEach(i=>i.style.display=minor?'':'none'); return minor; }
+$('#f [name=dataNascita]')?.addEventListener('change',updGen); updGen();
+function val(n){ const el=$('#f [name='+n+']'); return el.type==='checkbox'?el.checked:String(el.value||'').trim(); }
+function validate(){
+  document.querySelectorAll('.bad').forEach(x=>x.classList.remove('bad'));
+  const E=[], bad=(n,msg)=>{ const el=$('#f [name='+n+']'); (el.closest('label')||el).classList.add('bad'); E.push(msg); };
+  ['nome','cognome'].forEach(n=>{ if(!val(n)) bad(n,'Scrivi '+n+" dell'atleta"); });
+  if(!val('sesso')) bad('sesso','Indica il sesso');
+  if(!val('dataNascita')) bad('dataNascita','Inserisci la data di nascita');
+  if(!cfOk(val('codiceFiscale'))) bad('codiceFiscale',"Il codice fiscale dell'atleta non è corretto");
+  if((C.t||[]).length && !val('squadra')) bad('squadra','Scegli la squadra');
+  const minor=updGen();
+  if(minor){ if(!val('genNome')) bad('genNome','Scrivi nome e cognome del genitore'); if(!cfOk(val('genCf'))) bad('genCf','Il codice fiscale del genitore non è corretto'); if(!val('genTel')) bad('genTel','Inserisci il cellulare del genitore'); }
+  else if(val('genCf') && !cfOk(val('genCf'))) bad('genCf','Il codice fiscale di chi paga non è corretto');
+  ['email','genEmail'].forEach(n=>{ if(val(n) && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val(n))) bad(n,'Email non valida'); });
+  if(!val('privacy')) E.push("Serve il consenso al trattamento dei dati");
+  if(!val('regolamento')) E.push("Serve l'impegno sul regolamento e sul certificato medico");
+  if(!val('firma')) bad('firma','Scrivi il nome di chi compila');
+  $('#errs').innerHTML=E.length?'⚠ '+E.map(esc).join('<br>⚠ ')+'<br><br>':'';
+  if(E.length){ const b=document.querySelector('.bad'); (b||$('#errs')).scrollIntoView({behavior:'smooth',block:'center'}); }
+  return !E.length;
+}
+async function encrypt(obj){
+  const pub=await crypto.subtle.importKey('raw', unb64u(C.k), {name:'ECDH', namedCurve:'P-256'}, false, []);
+  const eph=await crypto.subtle.generateKey({name:'ECDH', namedCurve:'P-256'}, true, ['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'ECDH', public:pub}, eph.privateKey, {name:'AES-GCM', length:256}, false, ['encrypt']);
+  let data=new TextEncoder().encode(JSON.stringify(obj)), flag='n';
+  if(typeof CompressionStream!=='undefined'){ try{ data=new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer()); flag='z'; }catch(e){} }
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, data));
+  const ephRaw=new Uint8Array(await crypto.subtle.exportKey('raw', eph.publicKey));
+  return `VDI1-${flag}.${b64u(ephRaw)}.${b64u(iv)}.${b64u(ct)}!`;
+}
+$('#f').addEventListener('submit', async e=>{
+  e.preventDefault(); if(!validate()) return;
+  const btn=$('#go'); btn.disabled=true; btn.textContent='Preparo…';
+  try{
+    const sq=(C.t||[]).find(t=>t[0]===val('squadra'));
+    const rec={v:1, at:{nome:val('nome'), cognome:val('cognome'), sesso:val('sesso'), dataNascita:val('dataNascita'), luogoNascita:val('luogoNascita'), codiceFiscale:val('codiceFiscale').toUpperCase(),
+      indirizzo:val('indirizzo'), email:val('email'), cellulare:val('cellulare'), taglia:val('taglia'), scadenzaVisita:val('scadenzaVisita'), note:val('note')},
+      gen:{nome:val('genNome'), cf:val('genCf').toUpperCase(), tel:val('genTel'), email:val('genEmail')}, squadra:sq?sq[0]:'', squadraNome:sq?sq[1]:'', stagione:C.st||'',
+      consensi:{privacy:val('privacy'), foto:val('foto'), regolamento:val('regolamento')}, firma:val('firma'), quando:new Date().toISOString()};
+    const code=await encrypt(rec), who=rec.at.nome+' '+rec.at.cognome;
+    const msg=`Iscrizione di ${who}${rec.squadraNome?' ('+rec.squadraNome+')':''} a ${C.s||'la società'}.\nCodice per la segreteria (da incollare in Volleydesk):\n${code}`;
+    $('#code').textContent=msg;
+    $('#send-wa').href='https://wa.me/'+(C.wa||'')+'?text='+encodeURIComponent(msg);
+    if(C.em){ $('#send-mail').href='mailto:'+encodeURIComponent(C.em)+'?subject='+encodeURIComponent('Iscrizione '+who)+'&body='+encodeURIComponent(msg); $('#send-mail').classList.remove('hidden'); } else $('#send-mail').classList.add('hidden');
+    $('#copy').onclick=()=>{ navigator.clipboard.writeText(msg).then(()=>{ $('#copy').textContent='✓ Copiato'; }); };
+    const row=(k,v)=>v?`<tr><td style="color:#7a8296;padding:3px 12px 3px 0">${k}</td><td><b>${esc(v)}</b></td></tr>`:'';
+    $('#summary').innerHTML=`<h2>Riepilogo</h2><table style="font-size:14px;border-collapse:collapse">${row('Atleta',who)}${row('Nato/a il',rec.at.dataNascita.split('-').reverse().join('/'))}${row('Luogo di nascita',rec.at.luogoNascita)}${row('Codice fiscale',rec.at.codiceFiscale)}${row('Squadra',rec.squadraNome)}${row('Indirizzo',rec.at.indirizzo)}${row('Genitore',rec.gen.nome)}${row('C.F. genitore',rec.gen.cf)}${row('Cellulare',rec.gen.tel||rec.at.cellulare)}${row('Email',rec.gen.email||rec.at.email)}${row('Privacy','acconsento')}${row('Foto e video',rec.consensi.foto?'acconsento':'non acconsento')}${row('Firma',rec.firma)}${row('Data',new Date().toLocaleDateString('it-IT'))}</table>`;
+    $('#f').classList.add('hidden'); $('#intro-card')?.classList.add('hidden'); $('#done').classList.remove('hidden'); window.scrollTo(0,0);
+  }catch(err){ alert('Non sono riuscito a preparare l\'invio: '+(err.message||err)+'\nProva con un browser aggiornato (Chrome, Safari, Firefox).'); }
+  finally{ btn.disabled=false; btn.textContent='Prepara l\'invio'; }
+});
+$('#back')?.addEventListener('click', e=>{ e.preventDefault(); $('#done').classList.add('hidden'); $('#f').classList.remove('hidden'); });
+</script>
+</body>
+</html>
