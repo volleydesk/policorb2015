@@ -955,3 +955,88 @@ GUIDE.splice(1, 0,
 <ul><li>Se le due app sono aperte nello stesso browser (stesso indirizzo internet), all'avvio Volleydesk propone <b>«Porto qui i dati di Volleysched»</b>: copia atleti, esercizi, sessioni, partite, presenze e note.</li>
 <li>Altrimenti, in Volleysched scarica una copia completa (<b>Archivio → Scarica una copia → Tutto</b>) e in Volleydesk scegli <b>Importo un file</b>.</li>
 <li>Per la sincronizzazione crea un archivio GitHub nuovo, <code>volleydesk-dati</code>: così le due app non si mescolano.</li></ul>`]);
+
+/* ---------------------------------------------------------------- dati di prova (file demo)
+   Le date della demo si spostano in avanti in base al giorno dell'importazione, così scadenze e
+   pagamenti restano realistici; «Togli i dati di prova» toglie anche quote, cassa, staff ecc. */
+const _socDemoShift = demoShift;
+demoShift = function(d, base){
+  _socDemoShift(d, base);
+  const n=Math.round((parseISO(todayISO())-parseISO(base))/864e5); if(!n) return d;
+  const sh=iso=>{ if(!iso || !/^\d{4}-\d\d-\d\d$/.test(iso)) return iso; const x=parseISO(iso); x.setDate(x.getDate()+n); return toISO(x); };
+  const s0=socSeasonOf(base), s1=socSeasonOf(sh(base));
+  (d.athletes||[]).forEach(a=>{ a.scadenzaTessera=sh(a.scadenzaTessera); (a.infortuni||[]).forEach(x=>{ x.dal=sh(x.dal); x.rientro=sh(x.rientro); }); });
+  (d.payments||[]).forEach(p=>{ p.scadenza=sh(p.scadenza); if(p.stagione===s0) p.stagione=s1; (p.incassi||[]).forEach(x=>{ x.data=sh(x.data); x.ricevuta=String(x.ricevuta||'').replace(/\/\d{4}$/, '/'+String(x.data).slice(0,4)); }); });
+  (d.ledger||[]).forEach(m=>{ m.data=sh(m.data); m.stagione=socSeasonOf(m.data); });
+  (d.deadlines||[]).forEach(x=>{ x.data=sh(x.data); x.fattoIl=sh(x.fattoIl); });
+  (d.staff||[]).forEach(x=>['scadenzaTessera','scadenzaVisita','scadenzaQualifica','scadenzaCasellario'].forEach(k=>{ x[k]=sh(x[k]); }));
+  (d.inventory||[]).forEach(x=>(x.consegne||[]).forEach(c=>{ c.data=sh(c.data); c.resoIl=sh(c.resoIl); }));
+  try{ if(d.settings && d.settings.societa){ const o=JSON.parse(d.settings.societa); (o.pianiQuota||[]).forEach(p=>(p.rate||[]).forEach(r=>{ r.scadenza=sh(r.scadenza); })); d.settings.societa=JSON.stringify(o); } }catch(e){}
+  return d;
+};
+const SOC_DEMO_COLS=['athletes','matches','trainings','notes','payments','ledger','deadlines','staff','inventory'];
+demoCount = function(){ return SOC_DEMO_COLS.reduce((n,c)=>n+Store.list(c).filter(isDemo).length, 0); };
+demoClear = async function(){
+  if(!confirm('Togliere tutti i dati di prova (atleti, partite, presenze, note, quote, cassa, scadenze, staff, magazzino e le squadre di prova)? Esercizi e sessioni restano.')) return;
+  const dels=SOC_DEMO_COLS.flatMap(c=>Store.list(c).filter(isDemo).map(x=>({c, id:x.id})));
+  try{
+    await api('POST', '/api/multipli', {items:[], dels});
+    const s=Store.getSettings(), body={};
+    let L=[]; try{ L=JSON.parse(s.squadre||'[]'); }catch(e){}
+    if(Array.isArray(L) && L.some(t=>String(t.id).startsWith('demo-'))){
+      const keep=L.filter(t=>!String(t.id).startsWith('demo-'));
+      body.squadre = keep.length>1 ? JSON.stringify(keep) : '';
+      const base = keep[0] || {}; TEAM_FIELDS.forEach(k=>{ body[k]=base[k]||''; });
+      await Store.setMeta('squadraAttiva', keep[0] ? keep[0].id : null);
+    }
+    if((body.squadra ?? s.squadra)==='Volley Demo') body.squadra='';
+    try{ const camp=JSON.parse(body.campionati ?? s.campionati ?? '[]'); if(Array.isArray(camp)) body.campionati=JSON.stringify(camp.filter(c=>!/\(demo\)/.test(c))); }catch(e){}
+    try{ if(JSON.parse(s.societa||'{}').ragioneSociale==='A.S.D. Volley Demo') body.societa=''; }catch(e){}
+    if(Object.keys(body).length) await Store.api('PUT', '/api/impostazioni', body);
+    SOCD=null; await loadState(); applyBrand(); render(); toast('Dati di prova tolti');
+  }catch(e){ saveFail(e); }
+};
+
+/* ---------------------------------------------------------------- ripartire da zero (solo questo dispositivo) */
+function resetBoxHTML(){
+  return `<div class="demo-box"><span style="flex:1;min-width:200px">🗑 Vuoi <b>ripartire da zero</b> su questo dispositivo? Cancella tutti i dati che ci sono qui.</span><button class="btn sm danger" data-action="reset-open">Cancella tutto…</button></div>`;
+}
+function openReset(){
+  const c=Sync.config(), coach=typeof isCoach==='function' && isCoach();
+  openModal(`<div class="modal-box" style="max-width:580px"><div class="modal-head"><h2 style="flex:1">Cancellare tutto e ripartire da zero?</h2><button class="iconbtn" data-action="close-modal">✕</button></div>
+    <div class="modal-body">
+      <p style="margin-top:0">Su questo dispositivo vengono cancellati <b>tutti</b> i dati: esercizi, sessioni, atleti, partite, presenze, note, quote, pagamenti, prima nota, scadenze, staff, magazzino e impostazioni. L'app riparte dalla schermata di benvenuto.</p>
+      <p>Restano solo la chiave di attivazione e il periodo di prova.</p>
+      ${demoCount()?`<div class="warn">Se vuoi togliere solo i dati di prova, chiudi qui e usa <b>«Togli i dati di prova»</b>: esercizi e sessioni restano.</div>`:''}
+      ${c?`<div class="warn">Questo dispositivo è collegato all'archivio online <b>${esc(c.owner)}/${esc(c.repo)}</b>: verrà scollegato, ma l'archivio online <b>resta com'è</b>${coach?' (è quello della squadra, lo gestisce la segreteria)':' e gli altri dispositivi non perdono nulla'}. ${coach?'':'Se vuoi ripartire da zero anche online, dopo collega un archivio nuovo e vuoto: quello vecchio ti resta come copia.'}</div>`:''}
+      <p class="muted" style="font-size:13.5px">Prima, se vuoi, scarica una copia: potrai sempre reimportarla.</p>
+      <label class="f"><span>Per confermare scrivi <b>CANCELLA</b></span><input type="text" id="reset-word" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
+    </div>
+    <div class="modal-foot"><button class="btn" data-action="reset-backup">Scarica prima una copia</button><span style="flex:1"></span><button class="btn" data-action="close-modal">Annulla</button><button class="btn danger-fill" data-action="reset-go">Cancella tutto</button></div></div>`);
+}
+async function resetGo(){
+  if(($('#reset-word').value||'').trim().toUpperCase()!=='CANCELLA'){ alert('Per confermare scrivi CANCELLA nella casella.'); $('#reset-word').focus(); return; }
+  const btn=$('[data-action=reset-go]'); btn.disabled=true; btn.textContent='Cancello…';
+  try{
+    try{ const s=Store.getSettings(); localStorage.setItem('vd-keep', JSON.stringify({provaDal:s.provaDal||'', licenza:s.licenza||''})); }catch(e){}
+    if(Sync.config()) await Sync.disconnect();
+    await Store.wipe();
+    try{ Object.keys(localStorage).filter(k=>k.startsWith('vd-') && !['vd-keep','vd-visto','vd-prova','vd-theme'].includes(k)).forEach(k=>localStorage.removeItem(k)); }catch(e){}
+    location.reload();
+  }catch(e){ alert('Non sono riuscito a cancellare tutto: '+(e.message||e)+'\n\nChiudi le altre schede di Volleydesk e riprova.'); btn.disabled=false; btn.textContent='Cancella tutto'; }
+}
+/* il periodo di prova e la chiave non si perdono ripartendo da zero */
+licInit = async function(){
+  let keep={}, prova=''; try{ keep=JSON.parse(localStorage.getItem('vd-keep')||'{}')||{}; prova=localStorage.getItem('vd-prova')||''; }catch(e){}
+  let changed=false;
+  if(!db.settings.provaDal){ db.settings.provaDal=[keep.provaDal, prova].filter(Boolean).sort()[0] || todayISO(); changed=true; }
+  if(!db.settings.licenza && keep.licenza){ db.settings.licenza=keep.licenza; changed=true; }
+  if(changed) await persist.settings().catch(()=>{});
+  try{ const first=[prova, db.settings.provaDal].filter(Boolean).sort()[0]; localStorage.setItem('vd-prova', first); localStorage.removeItem('vd-keep'); }catch(e){}
+  await licRefresh();
+};
+Object.assign(actions, {
+  'reset-open': ()=>openReset(),
+  'reset-backup': ()=>exportBackup(),
+  'reset-go': ()=>resetGo()
+});

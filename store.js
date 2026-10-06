@@ -452,12 +452,18 @@ const Store = (() => {
     listeners.forEach(f => { try { f('local'); } catch (e) { console.error(e); } });
     return puts.length + dels.length;
   }
+  /* cancella l'intero archivio di questo dispositivo (per ripartire da zero) */
+  async function wipe() {
+    try { if (idb) idb.close(); } catch (e) {}
+    idb = null;
+    await new Promise(res => { const r = indexedDB.deleteDatabase(DBNAME); r.onsuccess = r.onerror = r.onblocked = () => res(); });
+  }
   function isEmpty() { return COLS.every(c => mem[c].size === 0); }
 
   return {
     COLS, init: async () => { idb = await open(); await loadAll(); }, api, fullState, snapshot, applyRemote, replaceAll, isEmpty,
     getMeta: k => meta[k], setMeta, onChange: f => listeners.add(f), seq: () => seq,
-    insertMissingSeed, seedExercise, prep, commitLocal, legacyInfo, importLegacy, money, applyTeam, getSettings, stamp: () => now(),
+    insertMissingSeed, seedExercise, prep, commitLocal, legacyInfo, importLegacy, money, applyTeam, getSettings, stamp: () => now(), wipe,
     list: c => [...(mem[c] || new Map()).values()].map(strip),   // una sola collezione (tutte le squadre)
     counts: () => Object.fromEntries(COLS.map(c => [c, mem[c].size]))
   };

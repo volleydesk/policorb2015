@@ -217,3 +217,4 @@
 .acc-mini{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;margin-bottom:10px;padding:8px 12px;border:1px dashed var(--line-2);border-radius:8px}
 body.coach #nav [data-nav=societa]{display:none}
 @media (max-width:760px){ body.coach .nav{grid-template-columns:repeat(6,1fr)} .acc-row{grid-template-columns:1fr} }
+.btn.danger-fill{background:#b3263a;border-color:#b3263a;color:#fff}

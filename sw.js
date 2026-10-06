@@ -1,6 +1,6 @@
 /* Volleydesk – funzionamento senza rete.
    Cambiare VERSION a ogni pubblicazione: l'app proporrà "Aggiorna". */
-const VERSION = 'v2-2026-10-06';
+const VERSION = 'v4-2026-10-06';
 const CACHE = 'volleydesk-shell-' + VERSION;
 const SHELL = ['./', 'index.html', 'store.js', 'sync.js', 'societa.js', 'societa.css', 'accessi.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', e => {

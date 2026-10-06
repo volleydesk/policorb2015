@@ -3140,6 +3140,7 @@ ${gamePanelHTML()}
       <button class="btn" data-action="import">Importa…</button>
     </div>
     ${demoBoxHTML()}
+    ${resetBoxHTML()}
     <p class="muted" style="font-size:13.5px;margin-bottom:0">${db.exercises.length} eserciz${db.exercises.length===1?'io':'i'} · ${db.sessions.length} session${db.sessions.length===1?'e':'i'} · ${db.athletes.length} atlet${db.athletes.length===1?'a':'i'} · ${db.matches.length} partit${db.matches.length===1?'a':'e'} · ${db.trainings.length} allenament${db.trainings.length===1?'o':'i'}</p>
   </div>
   <div class="panel">
@@ -5343,7 +5344,7 @@ function demoShift(d, base){
 const isDemo=x=>String(x&&x.id||'').startsWith('demo-');
 function demoCount(){ return db.athletes.filter(isDemo).length+db.matches.filter(isDemo).length+db.trainings.filter(isDemo).length+(db.notes||[]).filter(isDemo).length; }
 function demoBoxHTML(){ const n=demoCount(); if(!n) return '';
-  return `<div class="demo-box"><span style="flex:1;min-width:200px">🧪 Ci sono <b>dati di prova</b> (atleti, partite, presenze e note). Quando vuoi partire con la tua squadra puoi toglierli: esercizi e sessioni di prova restano.</span><button class="btn sm" data-action="demo-clear">🧹 Togli i dati di prova</button></div>`; }
+  return `<div class="demo-box"><span style="flex:1;min-width:200px">🧪 Ci sono <b>dati di prova</b> (atleti, partite, presenze, note e dati della società). Quando vuoi partire con la tua società puoi toglierli: esercizi e sessioni di prova restano.</span><button class="btn sm" data-action="demo-clear">🧹 Togli i dati di prova</button></div>`; }
 async function demoClear(){
   if(!confirm('Togliere atleti, partite, presenze e note di prova? Esercizi e sessioni restano.')) return;
   const jobs=[...db.athletes.filter(isDemo).map(x=>'/api/atleti/'+x.id), ...db.matches.filter(isDemo).map(x=>'/api/partite/'+x.id),
@@ -5355,7 +5356,7 @@ async function demoClear(){
 }
 
 /* ===== Versione dell'app ===== */
-const APP_VERSION='v2-2026-10-06';
+const APP_VERSION='v4-2026-10-06';
 function verLabel(v){ const m=String(v||'').match(/^v(\d+)-(\d{4})-(\d\d)-(\d\d)/); return m?`${m[1]} del ${+m[4]}/${+m[3]}/${m[2]}`:String(v||'?'); }
 const verNum=v=>{ const m=String(v||'').match(/^v(\d+)/); return m?+m[1]:0; };
 let swReg=null;
