@@ -3283,7 +3283,7 @@ const EXP_ITEMS=[
 ];
 function openExportModal(){
   const o=ui.exp=ui.exp||{sel:{exercises:true,sessions:true}, exMode:'all'};
-  const cnt={societa:['payments','ledger','deadlines','staff','inventory','venues'].reduce((n,c)=>n+Store.list(c).length,0), notes:(db.notes||[]).length, exercises:db.exercises.length, sessions:db.sessions.length, athletes:db.athletes.length, matches:db.matches.length, trainings:db.trainings.length, settings:''};
+  const cnt={societa:['payments','ledger','deadlines','staff','inventory','venues','docs'].reduce((n,c)=>n+Store.list(c).length,0), notes:(db.notes||[]).length, exercises:db.exercises.length, sessions:db.sessions.length, athletes:db.athletes.length, matches:db.matches.length, trainings:db.trainings.length, settings:''};
   const nFav=favSet().size;
   openModal(`<div class="modal-box" style="max-width:620px">
     <div class="modal-head"><div style="flex:1"><h2>Scarica una copia</h2><div class="muted" style="font-size:13px;margin-top:4px">Scegli cosa mettere nel file. Le voci in rosso contengono dati personali degli atleti.</div></div><button class="iconbtn" data-action="close-modal" title="Chiudi">✕</button></div>
@@ -3308,7 +3308,7 @@ function exportSelected(){
   if(sel.matches) out.matches=sel.athletes?st.matches:st.matches.map(m=>Object.assign({}, m, {convocati:[], assenti:[], disponibili:[], formazione:null, stats:null, referto:null}));
   if(sel.trainings) out.trainings=sel.athletes?st.trainings:st.trainings.map(t=>Object.assign({}, t, {presenze:{}}));
   if(sel.notes) out.notes=st.notes||[];
-  if(sel.societa){ out.payments=st.payments; out.ledger=st.ledger; out.deadlines=st.deadlines; out.staff=st.staff; out.inventory=st.inventory; out.venues=st.venues; }
+  if(sel.societa){ out.payments=st.payments; out.ledger=st.ledger; out.deadlines=st.deadlines; out.staff=st.staff; out.inventory=st.inventory; out.venues=st.venues; out.docs=st.docs; }
   if(sel.settings){ const s=Object.assign({}, st.settings); delete s.preferiti; delete s.licenza; delete s.provaDal; delete s.iscrizioni; delete s.accessi; delete s.promemoria; out.settings=s; }
   if(!out.exercises.length && !out.sessions.length && !out.athletes && !out.matches && !out.trainings && !out.settings && !out.payments){ alert('Con queste scelte il file sarebbe vuoto (per esempio non hai esercizi preferiti).'); return; }
   const all=EXP_ITEMS.every(([k])=>sel[k]) && o.exMode==='all';
@@ -3693,7 +3693,7 @@ function matchCard(m,isNext,past){
     <div class="mdate">${d?`<div class="wd">${d.toLocaleDateString('it-IT',{weekday:'short'})}</div><div class="dd">${d.getDate()}</div><div class="mm">${d.toLocaleDateString('it-IT',{month:'short'})} ${String(d.getFullYear()).slice(2)}</div>`:'<div class="mm">data da definire</div>'}</div>
     <div><h3>${esc(matchTitle(m))}<span class="ha ${m.inCasa?'casa':'trasf'}">${m.inCasa?'Casa':'Trasferta'}</span>${isNext?'<span class="next-pill">Prossima</span>':''}</h3>
       <div class="mmeta">${m.ora?`<span>⏰ ${esc(m.ora)}${m.oraRitrovo?' · ritrovo '+esc(m.oraRitrovo):''}</span>`:''}${m.palestra?`<span>📍 ${esc(m.palestra)}</span>`:''}${matchInfo(m)?`<span>${esc(matchInfo(m))}</span>`:''}</div></div>
-    <div class="mside">${m.risultato?`<div class="res">${esc(m.risultato)}</div>`:''}${past?(n?`<span class="muted">${n} convocati</span>`:''):(n?`<span class="conv-ok">✓ ${n} convocati</span>`:`<span class="conv-no">Convocazioni da fare</span>`)}${(!past && (m.assenti||[]).length)?`<span class="abs-pill">${m.assenti.length} assent${m.assenti.length===1?'e':'i'}</span>`:''}</div>
+    <div class="mside">${m.risultato?`<div class="res">${esc(m.risultato)}</div>${matchOutcome(m)?`<span class="res-o ${matchOutcome(m).win?'V':'P'}">${matchOutcome(m).win?'Vinta':'Persa'}</span>`:''}`:''}${past?(n?`<span class="muted">${n} convocati</span>`:''):(n?`<span class="conv-ok">✓ ${n} convocati</span>`:`<span class="conv-no">Convocazioni da fare</span>`)}${(!past && (m.assenti||[]).length)?`<span class="abs-pill">${m.assenti.length} assent${m.assenti.length===1?'e':'i'}</span>`:''}</div>
   </article>`;
 }
 
@@ -3719,11 +3719,22 @@ function campOptionsHTML(m){
 }
 const campScope=()=>{ const c=campSel(); return c==='__all'?db.matches:db.matches.filter(m=>campOf(m)===c); };
 /* risultato: set "casa-ospiti"; con le statistiche in partita si usano i set registrati */
-function matchSets(m){
-  const S=m.stats&&m.stats.sets; if(S && S.length){ const w=S.filter(s=>s.noi>s.loro).length; return {noi:w, loro:S.length-w, src:'stats'}; }
-  const r=(m.risultato||'').match(/(\d)\s*[-–:\/]\s*(\d)/); if(!r){ const W=refScores(m); if(!W.length) return null; const w=W.filter(x=>x.noi>x.loro).length; return {noi:w, loro:W.length-w, src:'ref'}; }
-  const h=+r[1], a=+r[2]; return m.inCasa?{noi:h, loro:a}:{noi:a, loro:h};
+/* Il risultato scritto («casa-ospiti», come sul referto ufficiale) vale per primo; se manca si usano i set
+   delle statistiche in partita e poi quelli del referto ricopiato. noi/loro sono sempre dal nostro punto di vista. */
+function resParse(m){ const r=(m.risultato||'').match(/^\s*(\d)\s*[-–:\/]\s*(\d)(?!\d)/); if(!r) return null; const h=+r[1], a=+r[2]; return m.inCasa?{noi:h, loro:a, src:'ris'}:{noi:a, loro:h, src:'ris'}; }
+function setsFromStats(m){ const S=m.stats&&m.stats.sets; if(!S || !S.length) return null; const w=S.filter(s=>s.noi>s.loro).length; return {noi:w, loro:S.length-w, src:'stats'}; }
+function setsFromRef(m){ const W=refScores(m); if(!W.length) return null; const w=W.filter(x=>x.noi>x.loro).length; return {noi:w, loro:W.length-w, src:'ref'}; }
+function matchSets(m){ return resParse(m) || setsFromStats(m) || setsFromRef(m); }
+/* punteggio nell'ordine del titolo (prima la squadra di casa), come si legge «Casa – Ospiti 3-1» */
+function scoreTitle(m, noi, loro, sep){ sep=sep||'–'; return m.inCasa ? `${noi}${sep}${loro}` : `${loro}${sep}${noi}`; }
+function setsTitle(m, sets){ return sets.map(x=>scoreTitle(m, x.noi, x.loro, '-')).join(', '); }
+/* risultato scritto che non torna con statistiche o referto completi */
+function resMismatch(m){
+  const r=resParse(m); if(!r) return null;
+  for(const o of [setsFromStats(m), setsFromRef(m)]){ if(o && (o.noi===3||o.loro===3) && (o.noi!==r.noi || o.loro!==r.loro)) return {r, o}; }
+  return null;
 }
+function resLabel(m){ const o=matchOutcome(m); return o ? `${o.win?'vittoria':'sconfitta'} ${o.noi}-${o.loro}` : ''; }
 function matchOutcome(m){ const s=matchSets(m); if(!s || (s.noi!==3 && s.loro!==3)) return null;
   const win=s.noi>s.loro, pts=win?(s.loro===2?2:3):(s.noi===2?1:0); return {win, pts, noi:s.noi, loro:s.loro}; }
 function daysUntil(iso){ const a=new Date(todayISO()+'T12:00'), b=new Date(iso+'T12:00'); return Math.round((b-a)/864e5); }
@@ -3770,12 +3781,12 @@ function recordHTML(played){
   const sw=known.reduce((s,x)=>s+x.o.noi,0), sl=known.reduce((s,x)=>s+x.o.loro,0), pts=known.reduce((s,x)=>s+x.o.pts,0);
   const last5=known.slice(0,5).reverse();
   return `<div class="group-title" style="--c:#8a94a6"><span class="bar"></span><h2>Andamento</h2><span class="muted">${played.length} giocat${played.length===1?'a':'e'}</span></div>
-  ${known.length?`<div class="rec"><div class="k"><span>Vinte</span><b style="color:#22a05a">${V}</b></div><div class="k"><span>Perse</span><b style="color:#d64a5a">${P}</b></div><div class="k"><span>Set</span><b>${sw}–${sl}</b></div><div class="k"><span>Punti</span><b>${pts}</b></div>${last5.length?`<div class="k"><span>Ultime ${last5.length}</span><b class="streak">${last5.map(x=>`<i class="${x.o.win?'V':'P'}">${x.o.win?'V':'P'}</i>`).join('')}</b></div>`:''}</div>`:''}
-  <table class="rtab"><thead><tr><th>Data</th><th>Partita</th><th class="n">Set</th><th class="n">Esito</th><th class="n hide-s">Punti</th><th class="n hide-s">Conv.</th></tr></thead>
+  ${known.length?`<div class="rec"><div class="k"><span>Vinte</span><b style="color:#22a05a">${V}</b></div><div class="k"><span>Perse</span><b style="color:#d64a5a">${P}</b></div><div class="k"><span>Set vinti–persi</span><b>${sw}–${sl}</b></div><div class="k"><span>Punti</span><b>${pts}</b></div>${last5.length?`<div class="k"><span>Ultime ${last5.length}</span><b class="streak">${last5.map(x=>`<i class="${x.o.win?'V':'P'}">${x.o.win?'V':'P'}</i>`).join('')}</b></div>`:''}</div>`:''}
+  <table class="rtab"><thead><tr><th>Data</th><th>Partita</th><th class="n" title="Set nell'ordine della partita: prima la squadra di casa">Set</th><th class="n">Esito</th><th class="n hide-s">Punti</th><th class="n hide-s">Conv.</th></tr></thead>
   <tbody>${O.map(x=>`<tr data-action="open-match" data-id="${x.m.id}"><td style="white-space:nowrap">${shortDate(x.m.data)}</td><td><b>${esc(matchTitle(x.m))}</b>${x.m.giornata?` <span class="muted" style="font-size:12px">· ${/^\d+$/.test(x.m.giornata)?x.m.giornata+'ª g.':esc(x.m.giornata)}</span>`:''}</td>
-    <td class="n"><b>${x.s?x.s.noi+'–'+x.s.loro:'<span class="muted">—</span>'}</b></td><td class="n">${x.o?`<span class="esito ${x.o.win?'V':'P'}">${x.o.win?'V':'P'}</span>`:'<span class="muted" style="font-size:12px">da inserire</span>'}</td>
+    <td class="n"><b title="${x.s?'Per noi '+x.s.noi+'-'+x.s.loro:''}">${x.s?scoreTitle(x.m, x.s.noi, x.s.loro):'<span class="muted">—</span>'}</b></td><td class="n">${x.o?`<span class="esito ${x.o.win?'V':'P'}">${x.o.win?'V':'P'}</span>`:'<span class="muted" style="font-size:12px">da inserire</span>'}</td>
     <td class="n hide-s">${x.o?x.o.pts:''}</td><td class="n hide-s">${convocati(x.m).length||''}</td></tr>`).join('')}</tbody></table>
-  <p class="muted" style="font-size:12px;margin:6px 0 0">Set e punti si calcolano dal risultato (scritto come «set della squadra di casa – set degli ospiti», es. 3-1) o dai set registrati con le statistiche in partita. Punti: 3 per la vittoria 3-0/3-1, 2 per il 3-2, 1 per la sconfitta 2-3.</p>`;
+  <p class="muted" style="font-size:12px;margin:6px 0 0">Il risultato si scrive come sul referto: prima i set della squadra di casa, poi quelli degli ospiti (es. «Avversari – Noi 1-3» è una nostra vittoria). Se manca si usano i set delle statistiche in partita o del referto. Punti: 3 per la vittoria 3-0/3-1, 2 per il 3-2, 1 per la sconfitta 2-3.</p>`;
 }
 function segMatchHTML(){ const v=viewMode('match'); return `<div class="vseg" role="group" aria-label="Vista">${[['schede','grid','Schede'],['compatta','list','Compatta'],['mese','partite','Mese']].map(([k,ic,l])=>`<button data-action="view-mode" data-k="match" data-v="${k}" class="${v===k?'on':''}" title="Vista ${l.toLowerCase()}"><span class="si">${ICO[ic]}</span><span class="sl">${l}</span></button>`).join('')}</div>`; }
 function viewPartite(){
@@ -4222,7 +4233,7 @@ function playedCount(m){ const out={}; const P=(m.stats&&m.stats.live&&m.stats.l
 function openMatchStats(){
   const m=getMatch(ui.matchId), S=getStats(m);
   const team={pt:S.ev.filter(OUR_PT).length, err:S.ev.filter(e=>THEIR_PT(e) && e.k!=='pl').length};
-  openModal(`<div class="modal-box" style="max-width:1000px"><div class="modal-head"><div style="flex:1"><h2>Statistiche della partita</h2><div class="muted" style="font-size:13.5px;margin-top:4px">${esc(matchTitle(m))}${S.sets.length?' · set '+S.sets.map(x=>x.noi+'-'+x.loro).join(', '):''} · punti nostri ${S.ev.filter(e=>OUR_PT(e)).length} (di cui ${S.ev.filter(e=>e.k==='pt').length} su errore avversario) · errori nostri ${team.err}</div></div><button class="iconbtn" data-action="close-modal">✕</button></div>
+  openModal(`<div class="modal-box" style="max-width:1000px"><div class="modal-head"><div style="flex:1"><h2>Statistiche della partita</h2><div class="muted" style="font-size:13.5px;margin-top:4px">${esc(matchTitle(m))}${S.sets.length?' · set '+setsTitle(m, S.sets):''} · punti nostri ${S.ev.filter(e=>OUR_PT(e)).length} (di cui ${S.ev.filter(e=>e.k==='pt').length} su errore avversario) · errori nostri ${team.err}</div></div><button class="iconbtn" data-action="close-modal">✕</button></div>
     <div class="modal-body">${statTable(S.ev, playedCount(m))}</div>
     <div class="modal-foot"><button class="btn danger" data-action="stats-reset">Azzera le statistiche</button><span style="flex:1"></span><button class="btn" data-action="stats-print">Stampa</button><button class="btn primary" data-action="close-modal">Chiudi</button></div></div>`);
 }
@@ -4314,7 +4325,7 @@ function viewPartita(){
       ${f('palestra','Palestra','text','Es. Palestra comunale')}
       ${f('indirizzo','Indirizzo','text','Via e città','span2')}
       ${f('divisa','Divisa','text','Es. maglia blu')}
-      ${f('risultato','Risultato (set casa – ospiti)','text','Es. 3-1')}
+      <label class="f">Risultato (set casa – ospiti)<input type="text" data-mf="risultato" value="${esc(m.risultato)}" placeholder="${m.inCasa?'Es. 3-1 se vinciamo 3-1':'Es. 1-3 se vinciamo 3-1'}" inputmode="numeric"><small id="res-hint" class="res-hint">${resHintHTML(m)}</small></label>
       <label class="f span3">Note per i convocati<textarea data-mf="note" rows="2">${esc(m.note)}</textarea></label>
     </div></div>
     <div class="panel" id="abs-panel" data-mt="conv">${absPanelHTML(m)}</div>
@@ -4338,7 +4349,15 @@ function viewPartita(){
   </div>${reportPanelHTML(m)}</div>
   </section>`;
 }
+function resHintHTML(m){
+  const v=(m.risultato||'').trim(); if(!v) return m.inCasa?'Prima i set nostri (siamo in casa)':'Prima i set degli avversari (siamo in trasferta)';
+  const r=resParse(m); if(!r) return '<span class="bad">Scrivi due numeri, es. 3-1</span>';
+  const o=matchOutcome(m), mm=resMismatch(m);
+  return (o?`= <b class="${o.win?'ok':'bad'}">${o.win?'Vittoria':'Sconfitta'} ${o.noi}-${o.loro}</b> ${m.inCasa?'(in casa)':'(in trasferta)'}`:`<span class="bad">Una delle due squadre deve avere 3 set</span>`)
+    + (mm?` · <span class="bad">⚠ ${mm.o.src==='stats'?'le statistiche':'il referto'} dic${mm.o.src==='stats'?'ono':'e'} ${mm.o.noi}-${mm.o.loro} per noi</span>`:'');
+}
 function refreshMatch(m, field){
+  { const h=$('#res-hint'); if(h) h.innerHTML=resHintHTML(m); if(field==='inCasa'){ const i=document.querySelector('[data-mf=risultato]'); if(i) i.placeholder=m.inCasa?'Es. 3-1 se vinciamo 3-1':'Es. 1-3 se vinciamo 3-1'; } }
   $('#m-title').textContent=matchTitle(m); $('#m-sub').textContent=matchSub(m);
   $('#wa-text').value=waText(m);
   if(field==='conv' && $('#form-panel')) $('#form-panel').innerHTML=formPanelHTML(m);
@@ -4481,7 +4500,7 @@ function mSumHTML(m){
   return `<div class="panel msum" data-mt="dati">
     ${it('Data', m.data?cap(fmtDate(m.data)):'')}${it('Inizio gara', m.ora)}${it('Ritrovo', m.oraRitrovo)}${it('Campo', m.inCasa?'In casa':'In trasferta')}
     ${it('Avversario', m.avversario)}${it('Campionato', m.competizione)}${it('Giornata', m.giornata)}${it('N° gara', m.numeroGara)}
-    ${it('Palestra', [m.palestra, m.indirizzo].filter(Boolean).join(', '),'full')}${it('Divisa', m.divisa)}${it('Risultato', m.risultato)}
+    ${it('Palestra', [m.palestra, m.indirizzo].filter(Boolean).join(', '),'full')}${it('Divisa', m.divisa)}${it('Risultato', m.risultato?m.risultato+(resLabel(m)?' · '+resLabel(m):''):'')}
     ${it('Note per i convocati', m.note,'full')}
     <div class="ed"><button class="btn sm" data-action="m-edit">✎ Modifica i dati</button></div></div>`;
 }
@@ -4682,8 +4701,8 @@ function matchReport(m){
   if(S.live && (S.live.noi||S.live.loro) && !sets.some(x=>x.set===S.live.set)) sets.push({noi:S.live.noi, loro:S.live.loro});
   const ms=matchSets(m), L=[];
   L.push(`🏐 *${matchTitle(m)}*`);
-  if(ms) L.push(`*${ms.noi} – ${ms.loro}*${ms.noi>ms.loro?' 🎉':''}` + (sets.length?`  (${sets.map(x=>x.noi+'-'+x.loro).join(', ')})`:''));
-  else if(sets.length) L.push(`Parziali: ${sets.map(x=>x.noi+'-'+x.loro).join(', ')}`);
+  if(ms) L.push(`*${scoreTitle(m, ms.noi, ms.loro, ' – ')}*` + ((ms.noi===3||ms.loro===3)?(ms.noi>ms.loro?' · vittoria 🎉':' · sconfitta'):'') + (sets.length?`  (${setsTitle(m, sets)})`:''));
+  else if(sets.length) L.push(`Parziali: ${setsTitle(m, sets)}`);
   const by={}; ev.forEach(e=>{ if(!e.a) return; const b=by[e.a]=by[e.a]||{ace:0,ricT:0,ricP:0,att:0,mur:0,dif:0}; if(e.k==='bat'&&e.v==='#') b.ace++; if(e.k==='ric'){ b.ricT++; if(e.v==='#'||e.v==='+') b.ricP++; } if(e.k==='att'&&e.v==='#') b.att++; if(e.k==='mur'&&e.v==='#') b.mur++; if(e.k==='dif'&&e.v==='+') b.dif++; });
   const best=(f,min)=>{ let w=null; for(const [id,b] of Object.entries(by)){ const v=f(b); if(v!=null && v>=min && (!w || v>w.v)) w={id,v,b}; } return w; };
   const nm=id=>{ const a=getAt(id); return a?fullName(a):'?'; };
@@ -5317,7 +5336,7 @@ function refStartHint(f){
 function refShareText(m){
   const L=refCollect([m]), A=refAnalyze(L), sc=refScores(m), I=refInsights(A,true), q=(a,b)=>b?Math.round(a*100/b)+'%':'—';
   const T=[`🏐 *Analisi della partita*`, matchTitle(m)+(m.data?' · '+shortDate(m.data):'')];
-  if(sc.length) T.push('Set: '+sc.map(x=>x.noi+'-'+x.loro).join(', '));
+  if(sc.length) T.push('Set: '+setsTitle(m, sc));
   T.push(`Cambio palla ${q(A.so[0],A.so[1])} · Break ${q(A.br[0],A.br[1])} · Punti ${A.pf}-${A.ps}`);
   T.push('', '*Rotazioni* (cambio palla / break)');
   refRotOrder(Object.keys(A.rot)).forEach(k=>{ const o=A.rot[k]; T.push(`${k}: ${q(o.rcvW,o.rcv)} / ${q(o.svW,o.sv)}`); });
@@ -5329,7 +5348,7 @@ function refShareText(m){
 function refPrint(m){
   const sc=refScores(m);
   doPrint(`<div style="font-family:Arial,sans-serif"><h1 style="font-size:17pt;margin:0 0 2pt">Analisi del referto</h1>
-    <p style="margin:0 0 8pt;color:#555">${esc(matchTitle(m))}${m.data?' · '+esc(cap(fmtDate(m.data))):''}${sc.length?' · set '+sc.map(x=>x.noi+'-'+x.loro).join(', '):''}</p>
+    <p style="margin:0 0 8pt;color:#555">${esc(matchTitle(m))}${m.data?' · '+esc(cap(fmtDate(m.data))):''}${sc.length?' · set '+setsTitle(m, sc):''}</p>
     ${refAnalysisHTML(refCollect([m]),{match:true})}</div>`, 'Analisi referto '+(m.avversario||''));
 }
 /* ===== Dati di prova ===== */
@@ -5357,7 +5376,7 @@ async function demoClear(){
 }
 
 /* ===== Versione dell'app ===== */
-const APP_VERSION='v6-2026-10-07';
+const APP_VERSION='v8-2026-10-07';
 function verLabel(v){ const m=String(v||'').match(/^v(\d+)-(\d{4})-(\d\d)-(\d\d)/); return m?`${m[1]} del ${+m[4]}/${+m[3]}/${m[2]}`:String(v||'?'); }
 const verNum=v=>{ const m=String(v||'').match(/^v(\d+)/); return m?+m[1]:0; };
 let swReg=null;
@@ -5787,6 +5806,8 @@ function checksData(){
   add('Atleti senza data di nascita', at.filter(a=>!a.dataNascita).map(a=>({l:fullName(a), act:'edit-at', id:a.id})));
   add('Atleti senza ruolo o senza sesso', at.filter(a=>!a.ruolo || !a.sesso).map(a=>({l:fullName(a), s:[!a.ruolo?'ruolo':'',!a.sesso?'sesso':''].filter(Boolean).join(' e ')+' da inserire', act:'edit-at', id:a.id})));
   add('Partite giocate senza risultato', db.matches.filter(m=>m.data && m.data<td && !matchSets(m)).map(m=>({l:matchTitle(m), s:shortDate(m.data), act:'open-match', id:m.id})));
+  add('Risultato diverso da statistiche o referto', db.matches.filter(m=>resMismatch(m)).map(m=>{ const x=resMismatch(m); return {l:matchTitle(m), s:`scritto ${m.risultato} (${x.r.noi}-${x.r.loro} per noi), ${x.o.src==='stats'?'statistiche':'referto'} ${x.o.noi}-${x.o.loro} per noi`, act:'open-match', id:m.id}; }));
+  add('Risultato scritto in modo non valido', db.matches.filter(m=>(m.risultato||'').trim() && m.data && m.data<td && (!resParse(m) || !matchOutcome(m))).map(m=>({l:matchTitle(m), s:'«'+m.risultato+'»: serve un risultato come 3-1 (una squadra a 3 set)', act:'open-match', id:m.id})));
   add('Partite senza data', db.matches.filter(m=>!m.data).map(m=>({l:matchTitle(m), act:'open-match', id:m.id})));
   add('Allenamenti passati senza presenze', db.trainings.filter(t=>t.data<td && t.data>=licAddDays(td,-60) && !t.annullato && !Object.keys(t.presenze||{}).length).map(t=>({l:'Allenamento del '+shortDate(t.data), act:'pd-go', id:t.id})));
   add('Sessioni senza esercizi', db.sessions.filter(s=>!(s.items||[]).length).map(s=>({l:s.titolo||'Sessione senza titolo', s:s.data?shortDate(s.data):'', act:'open-sess', id:s.id})));
@@ -6525,5 +6546,7 @@ if('serviceWorker' in navigator && location.protocol!=='file:'){
 <script src="promemoria.js"></script>
 <script src="bilancio.js"></script>
 <script src="palestre.js"></script>
+<script src="pagamenti.js"></script>
+<script src="documenti.js"></script>
 </body>
 </html>

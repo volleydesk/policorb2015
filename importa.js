@@ -45,8 +45,9 @@ const impTxt = v => v == null ? '' : String(v).trim();
 /* ---------------------------------------------------------------- lettura dei file */
 function impCsv(text){
   text = text.replace(/^﻿/, '');
-  const first = text.split(/\r?\n/).find(l => l.trim()) || '';
-  const cnt = c => (first.match(new RegExp(c === '\t' ? '\t' : '\\' + c, 'g')) || []).length;
+  /* separatore: quello più presente nelle prime righe (gli estratti conto hanno righe di intestazione senza separatori) */
+  const lines = text.split(/\r?\n/).filter(l => l.trim()).slice(0, 15);
+  const cnt = c => Math.max(0, ...lines.map(l => (l.match(new RegExp(c === '\t' ? '\t' : '\\' + c, 'g')) || []).length));
   const sep = ['\t', ';', ','].sort((a, b) => cnt(b) - cnt(a))[0];
   const rows = []; let row = [], cell = '', q = false;
   for(let i = 0; i < text.length; i++){

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# versione: 1
+# versione: 2
 """Volleydesk – promemoria automatici via email.
 
 Gira su GitHub (azione programmata nell'archivio privato dei dati, una volta al giorno).
@@ -13,7 +13,7 @@ Secrets (Settings → Secrets and variables → Actions):
   MAIL_FROM                  facoltativo (predefinito: SMTP_USER)
 Variabili d'ambiente per le prove: DRY_RUN=1 (stampa senza inviare), PROVA=1 (manda tutto alla segreteria).
 """
-import json, os, re, smtplib, ssl, sys
+import base64, json, os, re, smtplib, ssl, sys
 from datetime import date, datetime, timedelta
 from email.message import EmailMessage
 from email.utils import formataddr, make_msgid
@@ -80,6 +80,35 @@ def valida(mail):
     if re.search(r'@esempio\.it$|\.example$|@example\.', mail, re.I):   # indirizzi dei dati di prova
         return ''
     return mail
+
+
+def wa_number(c):
+    d = re.sub(r'[^\d+]', '', c or '')
+    if d.startswith('+'):
+        return d[1:]
+    if d.startswith('00'):
+        return d[2:]
+    if re.match(r'^3\d{8,9}$', d):
+        return '39' + d
+    return d
+
+
+def link_pagamento(a, righe, soc, cfg):
+    """Link alla pagina paga.html dell'app, con le rate da pagare (stesso formato dell'app)."""
+    url = cfg.get('pagaUrl') or ''
+    iban = re.sub(r'\s+', '', soc.get('iban') or '')
+    if not url or not (soc.get('paypalMe') or soc.get('satispayLink') or iban):
+        return ''
+    nome = (a.get('nome', '') + ' ' + a.get('cognome', '')).strip()
+    stag = (righe[0][1].get('stagione') or '') if righe else ''
+    caus = (soc.get('causale') or 'Quota {stagione} – {atleta}').replace('{stagione}', stag).replace('{atleta}', nome)
+    e = eta(a)
+    P = {'v': 1, 's': soc.get('ragioneSociale') or '', 'a': nome, 'r': [[x[1].get('descrizione') or x[1].get('voce') or 'Quota', x[2], x[1].get('scadenza') or ''] for x in righe],
+         't': r2(sum(x[2] for x in righe)), 'q': [x[1]['id'] for x in righe], 'c': caus, 'i': iban, 'h': soc.get('intestatarioIban') or soc.get('ragioneSociale') or '',
+         'pp': (soc.get('paypalMe') or '').strip(), 'sp': (soc.get('satispayLink') or '').strip(), 'wa': wa_number(soc.get('waSegreteria') or ''), 'em': soc.get('email') or '',
+         'd': bool(soc.get('detrazione', True) and e is not None and 5 <= e <= 18)}
+    P = {k: v for k, v in P.items() if v not in ('', False)}
+    return url + '#p=' + base64.urlsafe_b64encode(json.dumps(P, ensure_ascii=False, separators=(',', ':')).encode()).decode().rstrip('=')
 
 
 def chi_paga(a):
@@ -151,6 +180,7 @@ def calcola(doc, reg, cfg):
             intro = f"ti ricordiamo le prossime scadenze per {nome_at}:"
         testo = (f"Ciao {cp['nome'].split(' ')[0] if cp['nome'] else ''},\n{intro}\n{righe}\n\nTotale: {eur(tot)}."
                  + iban_txt(L[0][1].get('stagione'), nome_at)
+                 + (lambda u: f"\nPuoi pagare online con PayPal, Satispay o bonifico da qui: {u}" if u else '')(link_pagamento(a, L, soc, cfg))
                  + "\nSe hai già pagato, non considerare questo messaggio.\n\nGrazie,\n" + firma)
         out.append({'a': cp['email'], 'oggetto': ogg, 'testo': testo, 'chiavi': [x[4] for x in L]})
 

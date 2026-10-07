@@ -10,8 +10,8 @@
    ================================================================== */
 "use strict";
 const Store = (() => {
-  const DBNAME = 'volleydesk', VERSION = 4;
-  const COLS = ['exercises', 'sessions', 'athletes', 'matches', 'trainings', 'notes', 'payments', 'ledger', 'deadlines', 'staff', 'inventory', 'venues'];
+  const DBNAME = 'volleydesk', VERSION = 5;
+  const COLS = ['exercises', 'sessions', 'athletes', 'matches', 'trainings', 'notes', 'payments', 'ledger', 'deadlines', 'staff', 'inventory', 'venues', 'docs'];
   const SETTING_KEYS = ['squadra', 'allenatore', 'noteGenerali', 'calendarioAllenamenti', 'colore', 'accento', 'logo', 'campionati', 'preferiti', 'licenza', 'provaDal', 'opzioni', 'squadre', 'societa', 'accessi', 'iscrizioni', 'promemoria'];
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/, TIME_RE = /^\d{1,2}:\d{2}$/;
   let idb = null;
@@ -38,6 +38,7 @@ const Store = (() => {
         const d = r.result;
         for (const c of COLS) if (!d.objectStoreNames.contains(c)) d.createObjectStore(c, { keyPath: 'id' });
         if (!d.objectStoreNames.contains('meta')) d.createObjectStore('meta');
+        if (!d.objectStoreNames.contains('files')) d.createObjectStore('files');   // contenuto dei documenti allegati (dataURL), per nome del file
       };
       r.onsuccess = () => res(r.result);
       r.onerror = () => rej(r.error);
@@ -229,7 +230,15 @@ const Store = (() => {
     r.chiusure = (Array.isArray(x.chiusure) ? x.chiusure : []).filter(c => c && typeof c === 'object').map(c => ({ id: s(c.id) || newId('ch'), dal: dateOrEmpty(c.dal, 'chiusura'), al: dateOrEmpty(c.al, 'chiusura') || dateOrEmpty(c.dal), motivo: s(c.motivo).trim() })).filter(c => c.dal);
     return stamp(r, x, old);
   }
-  const NORM = { exercises: normEx, venues: normVenue, sessions: normSess, athletes: normAt, matches: normMatch, trainings: normTr, notes: normNote,
+  /* documento allegato: i dati del file stanno a parte (archivio 'files'), qui solo il riferimento */
+  const DOC_TIPI = ['certificato', 'privacy', 'tessera', 'documento', 'fattura', 'ricevuta', 'contratto', 'verbale', 'statuto', 'polizza', 'altro'];
+  function normDoc(x, old) {
+    const file = s(x.file); if (!/^img:[\w.-]+$/.test(file)) throw new Error('Manca il file del documento');
+    const rif = s(x.rif); if (!/^(at|st|mv|soc)(:[\w-]+)?$/.test(rif)) throw new Error('Documento senza collegamento');
+    return stamp({ id: s(x.id), titolo: s(x.titolo).trim() || s(x.nome).trim() || 'Documento', tipo: DOC_TIPI.includes(x.tipo) ? x.tipo : 'altro', rif, file,
+      nome: s(x.nome).trim(), mime: s(x.mime), size: toIntOrNull(x.size) || 0, data: dateOrEmpty(x.data, 'documento'), scadenza: dateOrEmpty(x.scadenza, 'scadenza documento'), note: s(x.note) }, x, old);
+  }
+  const NORM = { exercises: normEx, venues: normVenue, docs: normDoc, sessions: normSess, athletes: normAt, matches: normMatch, trainings: normTr, notes: normNote,
     payments: normPay, ledger: normLedger, deadlines: normDeadline, staff: normStaff, inventory: normInv };
   function prep(c, body) {
     const old = mem[c].get(body.id);
@@ -252,6 +261,7 @@ const Store = (() => {
     return { exercises: ex.map(strip), sessions: se.map(strip), athletes: at.map(strip), matches: ma.map(strip), trainings: tr.map(strip), notes: no.map(strip),
       payments: [...mem.payments.values()].sort(byDate('scadenza')).map(strip), ledger: [...mem.ledger.values()].sort(byDate('data')).map(strip),
       deadlines: [...mem.deadlines.values()].sort(byDate('data')).map(strip), staff: [...mem.staff.values()].sort((a, b) => coll(a.cognome, b.cognome) || coll(a.nome, b.nome)).map(strip),
+      docs: [...mem.docs.values()].sort((a, b) => (b.data || '').localeCompare(a.data || '')).map(strip),
       venues: [...mem.venues.values()].sort((a, b) => coll(a.nome, b.nome)).map(strip),
       inventory: [...mem.inventory.values()].sort((a, b) => coll(a.categoria, b.categoria) || coll(a.articolo, b.articolo)).map(strip),
       settings: getSettings(), info: {} };
@@ -367,6 +377,8 @@ const Store = (() => {
     generic('ledger', data.ledger, (y, m) => s(y.data) === s(m.data) && money(y.importo) === money(m.importo) && s(y.descrizione) === s(m.descrizione), m => DATE_RE.test(s(m.data)));
     generic('deadlines', data.deadlines, (y, d) => s(y.titolo) === s(d.titolo) && s(y.data) === s(d.data), d => !!s(d.titolo).trim() && DATE_RE.test(s(d.data)));
     generic('staff', data.staff, (y, a) => lc(y.nome) === lc(a.nome) && lc(y.cognome) === lc(a.cognome), a => !!(s(a.nome).trim() || s(a.cognome).trim()));
+    if (data.files && typeof data.files === 'object') for (const [ref, url] of Object.entries(data.files)) if (/^[\w.-]+$/.test(ref) && typeof url === 'string' && url.startsWith('data:')) await putFile(ref, url);
+    generic('docs', data.docs, (y, x) => s(y.file) === s(x.file) && s(y.rif) === s(x.rif), x => /^img:/.test(s(x.file)));
     generic('venues', data.venues, (y, x) => lc(y.nome) === lc(x.nome), x => !!s(x.nome).trim());
     generic('inventory', data.inventory, (y, x) => lc(y.articolo) === lc(x.articolo) && s(y.taglia) === s(x.taglia), x => !!s(x.articolo).trim());
     generic('notes', data.notes, (y, n) => s(y.titolo) === s(n.titolo) && s(y.testo) === s(n.testo), n => !!(s(n.titolo).trim() || s(n.testo).trim()));
@@ -380,7 +392,7 @@ const Store = (() => {
 
   /* ---------------------------------------------------------------- "server" */
   const ROUTES = [[/^\/api\/quote\/([\w-]+)$/, 'payments'], [/^\/api\/movimenti\/([\w-]+)$/, 'ledger'], [/^\/api\/scadenze\/([\w-]+)$/, 'deadlines'],
-    [/^\/api\/staff\/([\w-]+)$/, 'staff'], [/^\/api\/magazzino\/([\w-]+)$/, 'inventory'], [/^\/api\/palestre\/([\w-]+)$/, 'venues'], [/^\/api\/esercizi\/([\w-]+)$/, 'exercises'], [/^\/api\/sessioni\/([\w-]+)$/, 'sessions'], [/^\/api\/atleti\/([\w-]+)$/, 'athletes'],
+    [/^\/api\/staff\/([\w-]+)$/, 'staff'], [/^\/api\/magazzino\/([\w-]+)$/, 'inventory'], [/^\/api\/palestre\/([\w-]+)$/, 'venues'], [/^\/api\/documenti\/([\w-]+)$/, 'docs'], [/^\/api\/esercizi\/([\w-]+)$/, 'exercises'], [/^\/api\/sessioni\/([\w-]+)$/, 'sessions'], [/^\/api\/atleti\/([\w-]+)$/, 'athletes'],
     [/^\/api\/partite\/([\w-]+)$/, 'matches'], [/^\/api\/allenamenti\/([\w-]+)$/, 'trainings'], [/^\/api\/note\/([\w-]+)$/, 'notes']];
   function route(url) { for (const [re, c] of ROUTES) { const m = re.exec(url); if (m) return [c, decodeURIComponent(m[1])]; } return [null, null]; }
   async function api(method, url, body) {
@@ -481,12 +493,18 @@ const Store = (() => {
     idb = null;
     await new Promise(res => { const r = indexedDB.deleteDatabase(DBNAME); r.onsuccess = r.onerror = r.onblocked = () => res(); });
   }
+  /* file dei documenti: fuori dalla memoria, letti solo quando servono */
+  function fileTx(mode, fn) { return new Promise((res, rej) => { const t = idb.transaction(['files'], mode), st = t.objectStore('files'); const r = fn(st); t.oncomplete = () => res(r && 'result' in r ? r.result : undefined); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error('Spazio esaurito?')); }); }
+  const putFile = (ref, url) => fileTx('readwrite', st => st.put(url, ref));
+  const getFile = ref => fileTx('readonly', st => st.get(ref)).catch(() => null);
+  const delFile = ref => fileTx('readwrite', st => st.delete(ref));
+  const fileKeys = () => fileTx('readonly', st => st.getAllKeys()).catch(() => []);
   function isEmpty() { return COLS.every(c => mem[c].size === 0); }
 
   return {
     COLS, init: async () => { idb = await open(); await loadAll(); }, api, fullState, snapshot, applyRemote, replaceAll, isEmpty,
     getMeta: k => meta[k], setMeta, onChange: f => listeners.add(f), seq: () => seq,
-    insertMissingSeed, seedExercise, prep, commitLocal, legacyInfo, importLegacy, money, applyTeam, getSettings, stamp: () => now(), wipe,
+    insertMissingSeed, seedExercise, prep, commitLocal, legacyInfo, importLegacy, money, applyTeam, getSettings, stamp: () => now(), wipe, putFile, getFile, delFile, fileKeys,
     list: c => [...(mem[c] || new Map()).values()].map(strip),   // una sola collezione (tutte le squadre)
     counts: () => Object.fromEntries(COLS.map(c => [c, mem[c].size]))
   };

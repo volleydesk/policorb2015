@@ -977,13 +977,14 @@ demoShift = function(d, base){
   (d.deadlines||[]).forEach(x=>{ x.data=sh(x.data); x.fattoIl=sh(x.fattoIl); });
   (d.staff||[]).forEach(x=>['scadenzaTessera','scadenzaVisita','scadenzaQualifica','scadenzaCasellario'].forEach(k=>{ x[k]=sh(x[k]); }));
   (d.inventory||[]).forEach(x=>(x.consegne||[]).forEach(c=>{ c.data=sh(c.data); c.resoIl=sh(c.resoIl); }));
+  (d.docs||[]).forEach(x=>{ x.data=sh(x.data); x.scadenza=sh(x.scadenza); });
   (d.venues||[]).forEach(v=>{ (v.turni||[]).forEach(t=>{ t.dal=sh(t.dal); t.al=sh(t.al); }); (v.chiusure||[]).forEach(c=>{ c.dal=sh(c.dal); c.al=sh(c.al); }); });
   try{ if(d.settings && d.settings.societa){ const o=JSON.parse(d.settings.societa); (o.pianiQuota||[]).forEach(p=>(p.rate||[]).forEach(r=>{ r.scadenza=sh(r.scadenza); }));
     if(o.preventivi && o.preventivi[s0] && s0!==s1){ o.preventivi[s1]=o.preventivi[s0]; delete o.preventivi[s0]; }
     d.settings.societa=JSON.stringify(o); } }catch(e){}
   return d;
 };
-const SOC_DEMO_COLS=['athletes','matches','trainings','notes','payments','ledger','deadlines','staff','inventory','venues'];
+const SOC_DEMO_COLS=['athletes','matches','trainings','notes','payments','ledger','deadlines','staff','inventory','venues','docs'];
 demoCount = function(){ return SOC_DEMO_COLS.reduce((n,c)=>n+Store.list(c).filter(isDemo).length, 0); };
 demoClear = async function(){
   if(!confirm('Togliere tutti i dati di prova (atleti, partite, presenze, note, quote, cassa, scadenze, staff, magazzino e le squadre di prova)? Esercizi e sessioni restano.')) return;

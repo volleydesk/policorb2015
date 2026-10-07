@@ -11,8 +11,8 @@
 "use strict";
 const Sync = (() => {
   const API = self.SYNC_API_OVERRIDE || 'https://api.github.com';   // l'alternativa serve solo per le prove
-  const MIME = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml' };
-  const EXT = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/svg+xml': 'svg' };
+  const MIME = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml', pdf: 'application/pdf' };
+  const EXT = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/svg+xml': 'svg', 'application/pdf': 'pdf' };
   let cfg = null;               // {owner, repo, token, branch}
   let state = { status: 'off', msg: '', at: 0 };
   const listeners = new Set();
@@ -166,11 +166,11 @@ const Sync = (() => {
   /* scrive una nuova versione di dati.json (e le immagini che mancano) in un unico salvataggio */
   async function commitDoc(c, h, imgs, newDoc, message) {
     const referenced = new Set();
-    for (const L of Object.values(newDoc.collections)) for (const r of L || []) for (const f of ['image', 'avatar']) if (typeof r[f] === 'string' && r[f].startsWith('img:')) referenced.add(r[f].slice(4));
+    for (const L of Object.values(newDoc.collections)) for (const r of L || []) for (const f of ['image', 'avatar', 'file']) if (typeof r[f] === 'string' && r[f].startsWith('img:')) referenced.add(r[f].slice(4));
     const missing = [...referenced].filter(ref => !imgs.has(ref));
     const entries = [];
     await pool(missing, 4, async ref => {
-      const url = imgCache.get(ref); if (!url) return;
+      let url = imgCache.get(ref); if (!url && Store.getFile) url = await Store.getFile(ref); if (!url) return;   // i documenti allegati stanno nell'archivio dei file
       const b = await gh('/git/blobs', { method: 'POST', body: { content: url.slice(url.indexOf(',') + 1), encoding: 'base64' } }, c);
       entries.push({ path: 'img/' + ref, mode: '100644', type: 'blob', sha: b.sha });
     });
@@ -363,7 +363,17 @@ const Sync = (() => {
     await gh('/contents/' + path.split('/').map(encodeURIComponent).join('/'), { method: 'PUT', body: Object.assign({ message, content: b64utf8(text), branch: cfg.branch }, cur ? { sha: cur.sha } : {}) });
     return true;
   }
-  return { init, run, probe, connect, disconnect, getFile, putFile, setHub: h => { hub = h; }, teamStatus: () => Object.assign({}, teamState),
+  /* scarica un documento allegato dall'archivio online (quando su questo dispositivo manca) */
+  async function fetchDocFile(ref) {
+    if (!cfg) return null;
+    const h = await head(); if (!h) return null;
+    if (!h.tree) h.tree = (await gh('/git/commits/' + h.commit)).tree.sha;
+    const tree = await gh('/git/trees/' + h.tree + '?recursive=1');
+    const t = tree.tree.find(x => x.path === 'img/' + ref); if (!t) return null;
+    const b = await gh('/git/blobs/' + t.sha);
+    return 'data:' + (MIME[ref.split('.').pop()] || 'application/octet-stream') + ';base64,' + b.content.replace(/\s/g, '');
+  }
+  return { init, run, probe, connect, disconnect, getFile, putFile, fetchDocFile, setHub: h => { hub = h; }, teamStatus: () => Object.assign({}, teamState),
     checkTeamRepo: async t => { if (!cfg) throw new GhError("Prima collega l'archivio della società.", 400); const c = await teamCfg(t); const h = await head(c); const { doc } = await readRemote(h, c);
       if (doc.ambito && doc.ambito.id !== t.id) throw new GhError('Questo archivio è già usato per un\'altra squadra («' + (doc.ambito.nome || '?') + '»).', 400);
       if (!doc.ambito && Object.values(doc.collections).some(L => (L || []).length)) throw new GhError('Questo archivio contiene già altri dati: usa un archivio nuovo e vuoto per la squadra.', 400);

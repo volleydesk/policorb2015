@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pagamento</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+:root{--bg:#f3f1ec;--card:#fff;--ink:#1f2a44;--ink2:#4a5570;--muted:#7a8296;--line:#e3ddd2;--acc:#0f766e;--red:#c0283d;--ok:#1b8a4a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+header{background:var(--acc);color:#fff;padding:20px 18px 34px}
+header .in{max-width:560px;margin:0 auto}
+header small{opacity:.85;text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-size:12px}
+header h1{margin:4px 0 0;font-size:23px;line-height:1.2}
+main{max-width:560px;margin:-22px auto 40px;padding:0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--acc);margin:0 0 10px}
+.tot{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-top:2px solid var(--line);margin-top:8px;padding-top:10px}
+.tot b{font-size:28px;font-variant-numeric:tabular-nums}
+.row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed var(--line);font-size:15px}
+.row small{color:var(--muted)}
+.row span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+.pay{display:flex;align-items:center;gap:14px;width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:14px;font:inherit;color:inherit;text-decoration:none;cursor:pointer;margin-bottom:10px;text-align:left}
+.pay .ic{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;font-weight:900;font-size:15px;color:#fff;flex:none}
+.pay .tx{flex:1;display:flex;flex-direction:column}
+.pay .tx small{color:var(--muted)}
+.pp .ic{background:#003087}.sp .ic{background:#ef4040}.bo .ic{background:#4a5570}
+.box{background:#f6f7f8;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:-4px 0 12px;font-size:14.5px}
+.box .l{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0}
+.box code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;word-break:break-all}
+.cp{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;flex:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #cfc8bb;background:#fff;color:var(--ink);font:inherit;font-weight:700;border-radius:10px;padding:12px 16px;cursor:pointer;text-decoration:none;width:100%}
+.btn.wa{background:#25d366;border-color:#25d366;color:#fff}
+.muted{color:var(--muted)}
+.hidden{display:none!important}
+.done{color:var(--ok);font-weight:700}
+select{font:inherit;padding:10px;border:1px solid #cfc8bb;border-radius:9px;width:100%;margin:6px 0 10px;background:#fff}
+</style>
+</head>
+<body>
+<header><div class="in"><small id="soc">Pagamento</small><h1 id="who">Pagamento</h1></div></header>
+<main>
+<div id="bad" class="card hidden"><h2>Link non valido</h2><p>Questo indirizzo è incompleto. Chiedi alla segreteria di mandarti di nuovo il link.</p></div>
+<div id="ok" class="hidden">
+  <div class="card"><h2>Da pagare</h2><div id="righe"></div><div class="tot"><span>Totale</span><b id="tot"></b></div></div>
+  <div class="card"><h2>Come vuoi pagare?</h2>
+    <a class="pay pp hidden" id="pp" target="_blank" rel="noopener"><span class="ic">PP</span><span class="tx"><b>PayPal</b><small>con il conto PayPal o con la carta; l'importo è già inserito</small></span><span>›</span></a>
+    <a class="pay sp hidden" id="sp" target="_blank" rel="noopener"><span class="ic">S</span><span class="tx"><b>Satispay</b><small id="sp-s">nell'app scrivi l'importo indicato qui sopra</small></span><span>›</span></a>
+    <button type="button" class="pay bo hidden" id="bo"><span class="ic">€</span><span class="tx"><b>Bonifico</b><small>IBAN e causale da copiare nell'app della banca</small></span><span>›</span></button>
+    <div class="box hidden" id="bo-box">
+      <div class="l"><span>IBAN <code id="iban"></code></span><button class="cp" data-cp="iban">Copia</button></div>
+      <div class="l" id="int-l"><span>Intestato a <b id="int"></b></span></div>
+      <div class="l"><span>Importo <b id="imp"></b></span><button class="cp" data-cp="imp">Copia</button></div>
+      <div class="l"><span>Causale <code id="cau"></code></span><button class="cp" data-cp="cau">Copia</button></div>
+    </div>
+    <p class="muted" style="font-size:13.5px;margin:4px 0 0" id="detr"></p>
+  </div>
+  <div class="card" id="conf"><h2>Hai pagato?</h2>
+    <p style="margin-top:0;font-size:15px">Avvisa la segreteria: registra il pagamento e ti manda la ricevuta.</p>
+    <select id="met"></select>
+    <a class="btn wa" id="wa" target="_blank" rel="noopener">Avvisa la segreteria su WhatsApp</a>
+    <p class="muted" style="font-size:13px;margin:10px 0 0" id="mail-l"></p>
+  </div>
+</div>
+</main>
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const unb64u=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'==='.slice((s.length+3)%4)),c=>c.charCodeAt(0));
+const b64u=str=>{ const u8=new TextEncoder().encode(str); let s=''; u8.forEach(c=>s+=String.fromCharCode(c)); return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); };
+const eur=n=>(+n||0).toLocaleString('it-IT',{style:'currency',currency:'EUR'});
+const dIt=iso=>iso?iso.split('-').reverse().join('/'):'';
+let P=null; try{ P=JSON.parse(new TextDecoder().decode(unb64u(location.hash.replace(/^#p=/,'')))); if(!P||!P.r) P=null; }catch(e){ P=null; }
+if(!P){ $('#bad').classList.remove('hidden'); }
+else{
+  document.title='Pagamento – '+(P.s||'');
+  $('#soc').textContent=P.s||'Pagamento'; $('#who').textContent=P.a||'Pagamento';
+  const today=new Date().toISOString().slice(0,10);
+  $('#righe').innerHTML=P.r.map(r=>`<div class="row"><span>${esc(r[0])}${r[2]?`<br><small>${r[2]<today?'<b style="color:#c0283d">scaduta il '+dIt(r[2])+'</b>':'entro il '+dIt(r[2])}</small>`:''}</span><span>${eur(r[1])}</span></div>`).join('');
+  $('#tot').textContent=eur(P.t);
+  const amt=(Math.round(P.t*100)/100).toFixed(2);
+  const metodi=[];
+  if(P.pp){ const u=/^https?:/.test(P.pp)?P.pp.replace(/\/$/,''):'https://www.paypal.me/'+encodeURIComponent(P.pp.replace(/^@/,'')); $('#pp').href=u+'/'+amt+'EUR'; $('#pp').classList.remove('hidden'); metodi.push('PayPal'); }
+  if(P.sp){ $('#sp').href=P.sp; $('#sp').classList.remove('hidden'); $('#sp-s').textContent=`nell'app scrivi ${eur(P.t)}`+(P.c?' e nel messaggio «'+P.c+'»':''); metodi.push('Satispay'); }
+  if(P.i){ $('#bo').classList.remove('hidden'); $('#iban').textContent=P.i.replace(/(.{4})/g,'$1 ').trim(); $('#imp').textContent=eur(P.t); $('#cau').textContent=P.c||'';
+    if(P.h) $('#int').textContent=P.h; else $('#int-l').classList.add('hidden'); metodi.push('Bonifico'); }
+  $('#bo').onclick=()=>$('#bo-box').classList.toggle('hidden');
+  if(P.d) $('#detr').textContent='Per detrarre la spesa sportiva dei figli nella dichiarazione dei redditi conviene un pagamento tracciabile: PayPal, Satispay e bonifico lo sono.';
+  document.querySelectorAll('[data-cp]').forEach(b=>b.onclick=()=>{ const v={iban:P.i, imp:amt.replace('.',','), cau:P.c||''}[b.dataset.cp]; navigator.clipboard.writeText(v).then(()=>{ b.textContent='✓'; setTimeout(()=>b.textContent='Copia',1500); }); });
+  $('#met').innerHTML=metodi.concat(['Contanti','Altro']).map(m=>`<option>${m}</option>`).join('');
+  const upd=()=>{ const m=$('#met').value, code='VDP1-'+b64u(JSON.stringify({q:P.q||[], t:P.t, m, d:today, a:P.a}))+'!';
+    const msg=`Ciao, ho pagato ${eur(P.t)} con ${m} per ${P.a} (${P.r.map(r=>r[0]).join(', ')}).\nCodice per la segreteria: ${code}`;
+    $('#wa').href='https://wa.me/'+(P.wa||'')+'?text='+encodeURIComponent(msg);
+    $('#mail-l').innerHTML=P.em?`Oppure <a href="mailto:${encodeURIComponent(P.em)}?subject=${encodeURIComponent('Pagamento '+P.a)}&body=${encodeURIComponent(msg)}">mandalo per email</a>.`:''; };
+  $('#met').onchange=upd; upd();
+  if(!P.wa){ $('#wa').textContent='Avvisa la segreteria'; }
+  $('#ok').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
