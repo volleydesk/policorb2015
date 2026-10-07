@@ -3278,12 +3278,12 @@ const EXP_ITEMS=[
   ['matches','📅 Partite e convocazioni','Calendario, convocati, assenti, formazioni e statistiche.',true],
   ['trainings','✅ Presenze','Calendario degli allenamenti e presenze di ogni atleta.',true],
   ['notes','📝 Note','Le tue note personali.',true],
-  ['societa','🏛 Società','Quote, incassi e ricevute, prima nota, scadenze, staff e magazzino.',true],
+  ['societa','🏛 Società','Quote, incassi e ricevute, prima nota, preventivo, scadenze, staff, palestre e magazzino.',true],
   ['settings','⚙️ Impostazioni','Nome della squadra, allenatore, note di stampa, colori e logo.',false],
 ];
 function openExportModal(){
   const o=ui.exp=ui.exp||{sel:{exercises:true,sessions:true}, exMode:'all'};
-  const cnt={societa:['payments','ledger','deadlines','staff','inventory'].reduce((n,c)=>n+Store.list(c).length,0), notes:(db.notes||[]).length, exercises:db.exercises.length, sessions:db.sessions.length, athletes:db.athletes.length, matches:db.matches.length, trainings:db.trainings.length, settings:''};
+  const cnt={societa:['payments','ledger','deadlines','staff','inventory','venues'].reduce((n,c)=>n+Store.list(c).length,0), notes:(db.notes||[]).length, exercises:db.exercises.length, sessions:db.sessions.length, athletes:db.athletes.length, matches:db.matches.length, trainings:db.trainings.length, settings:''};
   const nFav=favSet().size;
   openModal(`<div class="modal-box" style="max-width:620px">
     <div class="modal-head"><div style="flex:1"><h2>Scarica una copia</h2><div class="muted" style="font-size:13px;margin-top:4px">Scegli cosa mettere nel file. Le voci in rosso contengono dati personali degli atleti.</div></div><button class="iconbtn" data-action="close-modal" title="Chiudi">✕</button></div>
@@ -3308,7 +3308,7 @@ function exportSelected(){
   if(sel.matches) out.matches=sel.athletes?st.matches:st.matches.map(m=>Object.assign({}, m, {convocati:[], assenti:[], disponibili:[], formazione:null, stats:null, referto:null}));
   if(sel.trainings) out.trainings=sel.athletes?st.trainings:st.trainings.map(t=>Object.assign({}, t, {presenze:{}}));
   if(sel.notes) out.notes=st.notes||[];
-  if(sel.societa){ out.payments=st.payments; out.ledger=st.ledger; out.deadlines=st.deadlines; out.staff=st.staff; out.inventory=st.inventory; }
+  if(sel.societa){ out.payments=st.payments; out.ledger=st.ledger; out.deadlines=st.deadlines; out.staff=st.staff; out.inventory=st.inventory; out.venues=st.venues; }
   if(sel.settings){ const s=Object.assign({}, st.settings); delete s.preferiti; delete s.licenza; delete s.provaDal; delete s.iscrizioni; delete s.accessi; delete s.promemoria; out.settings=s; }
   if(!out.exercises.length && !out.sessions.length && !out.athletes && !out.matches && !out.trainings && !out.settings && !out.payments){ alert('Con queste scelte il file sarebbe vuoto (per esempio non hai esercizi preferiti).'); return; }
   const all=EXP_ITEMS.every(([k])=>sel[k]) && o.exMode==='all';
@@ -5357,7 +5357,7 @@ async function demoClear(){
 }
 
 /* ===== Versione dell'app ===== */
-const APP_VERSION='v5-2026-10-06';
+const APP_VERSION='v6-2026-10-07';
 function verLabel(v){ const m=String(v||'').match(/^v(\d+)-(\d{4})-(\d\d)-(\d\d)/); return m?`${m[1]} del ${+m[4]}/${+m[3]}/${m[2]}`:String(v||'?'); }
 const verNum=v=>{ const m=String(v||'').match(/^v(\d+)/); return m?+m[1]:0; };
 let swReg=null;
@@ -6523,5 +6523,7 @@ if('serviceWorker' in navigator && location.protocol!=='file:'){
 <script src="importa.js"></script>
 <script src="iscrizioni.js"></script>
 <script src="promemoria.js"></script>
+<script src="bilancio.js"></script>
+<script src="palestre.js"></script>
 </body>
 </html>

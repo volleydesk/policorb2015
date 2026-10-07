@@ -44,12 +44,12 @@ let SOCD = null;
 function socData(){
   if(!SOCD){
     const at=Store.list('athletes');
-    SOCD = { at, atMap:new Map(at.map(a=>[a.id,a])), pay:Store.list('payments'), led:Store.list('ledger'), dl:Store.list('deadlines'), staff:Store.list('staff'), inv:Store.list('inventory') };
+    SOCD = { at, atMap:new Map(at.map(a=>[a.id,a])), pay:Store.list('payments'), led:Store.list('ledger'), dl:Store.list('deadlines'), staff:Store.list('staff'), inv:Store.list('inventory'), ven:Store.list('venues') };
   }
   return SOCD;
 }
 Store.onChange(()=>{ SOCD=null; });
-const SOC_ROUTE = {payments:'quote', ledger:'movimenti', deadlines:'scadenze', staff:'staff', inventory:'magazzino'};
+const SOC_ROUTE = {venues:'palestre', payments:'quote', ledger:'movimenti', deadlines:'scadenze', staff:'staff', inventory:'magazzino'};
 async function socPut(c, r){ r.updatedAt=Date.now(); if(!r.createdAt) r.createdAt=r.updatedAt; await api('PUT', '/api/'+SOC_ROUTE[c]+'/'+encodeURIComponent(r.id), r); SOCD=null; }
 async function socDel(c, id){ await api('DELETE', '/api/'+SOC_ROUTE[c]+'/'+encodeURIComponent(id)); SOCD=null; }
 async function socBulk(items, dels){ await api('POST', '/api/multipli', {items, dels:dels||[]}); SOCD=null; }
@@ -179,11 +179,13 @@ function socChecks(){
 }
 
 /* ---------------------------------------------------------------- vista principale */
+/* schede aggiunte da altri file: SOC_BODY[nome] = stagione => html; SOC_SEASON_TABS: schede con la scelta della stagione */
+const SOC_BODY = {}, SOC_SEASON_TABS = ['panoramica','quote','cassa'];
 function viewSocieta(){
   const tab=ui.socTab||'panoramica', c=socCfg(), season=socSeason();
-  const body = tab==='quote'?socQuoteHTML(season) : tab==='cassa'?socCassaHTML(season) : tab==='scadenze'?socScadHTML() : tab==='staff'?socStaffHTML()
+  const body = SOC_BODY[tab] ? SOC_BODY[tab](season) : tab==='quote'?socQuoteHTML(season) : tab==='cassa'?socCassaHTML(season) : tab==='scadenze'?socScadHTML() : tab==='staff'?socStaffHTML()
     : tab==='magazzino'?socInvHTML() : tab==='dati'?socDatiHTML() : socPanoramicaHTML(season);
-  const seasonSel=['panoramica','quote','cassa'].includes(tab)?`<select id="soc-season" class="sd-season" title="Stagione">${socSeasons().map(s=>`<option ${s===season?'selected':''}>${esc(s)}</option>`).join('')}</select>`:'';
+  const seasonSel=SOC_SEASON_TABS.includes(tab)?`<select id="soc-season" class="sd-season" title="Stagione">${socSeasons().map(s=>`<option ${s===season?'selected':''}>${esc(s)}</option>`).join('')}</select>`:'';
   return `<section class="sd">
   <div class="page-head"><div><h1>${esc(c.ragioneSociale||'Società')}</h1><p class="muted">${c.ragioneSociale?'Gestione della società':'Inserisci il nome in «Dati società»'}${seasonSel?' · stagione ':''}${seasonSel}</p></div></div>
   <nav class="sd-tabs" role="tablist">${SOC_TABS.map(([k,l])=>`<button role="tab" class="${tab===k?'on':''}" data-action="soc-tab" data-t="${k}">${l}${k==='scadenze'?socBadge():''}</button>`).join('')}</nav>
@@ -215,7 +217,7 @@ function socPanoramicaHTML(season){
     <div class="panel"><div class="sd-ph"><h2>Entrate e uscite per mese</h2></div>${socMonthChart(season, M)}</div>
   </div>
   ${checks.length?`<div class="panel sd-checks"><h2>Da sistemare</h2>${checks.map((g,i)=>`<details ${i===0?'open':''}><summary><b>${esc(g.t)}</b><span class="sd-pill p-bad">${g.L.length}</span></summary>${g.hint?`<p class="muted">${esc(g.hint)}</p>`:''}
-    <div class="sd-names">${g.L.slice(0,40).map(x=>x.a?`<button data-action="${g.t.startsWith('Senza quote')||g.t.startsWith('Ricevute')?'soc-at':'soc-at-edit'}" data-id="${x.a.id}">${esc(fullName(x.a))}${x.s?` <small>${esc(x.s)}</small>`:''}</button>`:'').join('')}${g.L.length>40?`<span class="muted">e altri ${g.L.length-40}</span>`:''}</div></details>`).join('')}</div>`:''}`;
+    <div class="sd-names">${g.L.slice(0,40).map(x=>x.a?`<button data-action="${g.staff?'soc-staff':g.t.startsWith('Senza quote')||g.t.startsWith('Ricevute')?'soc-at':'soc-at-edit'}" data-id="${x.a.id}">${esc(fullName(x.a))}${x.s?` <small>${esc(x.s)}</small>`:''}</button>`:'').join('')}${g.L.length>40?`<span class="muted">e altri ${g.L.length-40}</span>`:''}</div></details>`).join('')}</div>`:''}`;
 }
 function socMonthChart(season, M){
   const [a]=socSeasonRange(season), d0=parseISO(a); if(!d0) return '';
@@ -461,13 +463,17 @@ function openLedger(id, tipo, draft){
         <label class="f">N° documento<input type="text" name="documento" value="${esc(m.documento)}" placeholder="Fattura, ricevuta…"></label>
         ${teamMulti()?`<label class="f">Squadra<select name="squadra"><option value="">Tutta la società</option>${teamsRaw().map((t,i)=>`<option value="${t.id}" ${m.squadra===t.id?'selected':''}>${esc(teamLabel(t,i))}</option>`).join('')}</select></label>`:''}
         <label class="f ${teamMulti()?'':'span2'}">Note<input type="text" name="note" value="${esc(m.note)}"></label>
+        ${m.tipo==='U'&&D.staff.length?`<label class="f">Pagamento a una persona dello staff<select name="staffId" id="led-staff"><option value="">— no —</option>${D.staff.map(x=>`<option value="${x.id}" ${m.staffId===x.id?'selected':''}>${esc(fullName(x))}${x.ruolo?' · '+esc(x.ruolo):''}</option>`).join('')}</select></label>
+        <label class="f">Tipo di pagamento<select name="natura"><option value="compenso" ${m.natura!=='rimborso'?'selected':''}>Compenso o rimborso forfettario</option><option value="rimborso" ${m.natura==='rimborso'?'selected':''}>Rimborso di spese documentate</option></select></label>`:''}
       </div></div>
     <div class="modal-foot">${id?'<button type="button" class="btn danger" data-action="led-del">Elimina</button>':''}<span style="flex:1"></span><button type="button" class="btn" data-action="close-modal">Annulla</button>${id?'':'<button type="button" class="btn" data-action="led-save" data-again="1">Salva e aggiungi un altro</button>'}<button type="button" class="btn primary" data-action="led-save">Salva</button></div></form></div>`);
   setTimeout(()=>$('#led-form [name=importo]')?.focus(), 40);
 }
 async function socLedSave(again){
   const fd=new FormData($('#led-form')), m=ui.ledDraft;
-  ['data','categoria','descrizione','controparte','metodo','documento','note','squadra'].forEach(k=>m[k]=(fd.get(k)||'').toString().trim());
+  ['data','categoria','descrizione','controparte','metodo','documento','note','squadra','staffId','natura'].forEach(k=>m[k]=(fd.get(k)||'').toString().trim());
+  if(m.tipo!=='U'){ m.staffId=''; m.natura=''; }
+  if(m.staffId){ const p=socData().staff.find(x=>x.id===m.staffId); if(p && !m.controparte) m.controparte=fullName(p); if(!m.categoria) m.categoria='Rimborsi e compensi staff'; if(!m.natura) m.natura='compenso'; } else m.natura='';
   m.importo=money(fd.get('importo')); if(!m.importo){ alert("Inserisci l'importo."); return; } if(!m.data){ alert('Inserisci la data.'); return; }
   m.stagione=socSeasonOf(m.data); if(!m.id) m.id=newId('mv');
   try{ await socPut('ledger', m); }catch(e){ saveFail(e); return; }
@@ -858,7 +864,7 @@ Object.assign(actions, {
   'soc-led-new': b=>openLedger(null, b.dataset.t),
   'soc-led-edit': b=>openLedger(b.dataset.id),
   'soc-led-filter': b=>{ ui.sl=Object.assign(ui.sl||{}, {t:b.dataset.v}); render(); },
-  'led-tipo': b=>{ const fd=new FormData($('#led-form')), m=ui.ledDraft; ['data','categoria','descrizione','controparte','metodo','documento','note','squadra'].forEach(k=>m[k]=(fd.get(k)||'').toString()); m.importo=money(fd.get('importo'))||''; if(m.tipo!==b.dataset.v) m.categoria=''; m.tipo=b.dataset.v; openLedger(m.id, m.tipo, m); },
+  'led-tipo': b=>{ const fd=new FormData($('#led-form')), m=ui.ledDraft; ['data','categoria','descrizione','controparte','metodo','documento','note','squadra','staffId','natura'].forEach(k=>m[k]=(fd.get(k)||'').toString()); m.importo=money(fd.get('importo'))||''; if(m.tipo!==b.dataset.v) m.categoria=''; m.tipo=b.dataset.v; openLedger(m.id, m.tipo, m); },
   'led-save': b=>socLedSave(!!b.dataset.again),
   'led-del': async ()=>{ const m=ui.ledDraft; if(!m.id || !confirm('Eliminare questo movimento?')) return; try{ await socDel('ledger', m.id); }catch(e){ saveFail(e); return; } closeModal(); toast('Movimento eliminato'); socRefreshBehind(); },
   'soc-csv-led': ()=>socCsvLed(),
@@ -971,10 +977,13 @@ demoShift = function(d, base){
   (d.deadlines||[]).forEach(x=>{ x.data=sh(x.data); x.fattoIl=sh(x.fattoIl); });
   (d.staff||[]).forEach(x=>['scadenzaTessera','scadenzaVisita','scadenzaQualifica','scadenzaCasellario'].forEach(k=>{ x[k]=sh(x[k]); }));
   (d.inventory||[]).forEach(x=>(x.consegne||[]).forEach(c=>{ c.data=sh(c.data); c.resoIl=sh(c.resoIl); }));
-  try{ if(d.settings && d.settings.societa){ const o=JSON.parse(d.settings.societa); (o.pianiQuota||[]).forEach(p=>(p.rate||[]).forEach(r=>{ r.scadenza=sh(r.scadenza); })); d.settings.societa=JSON.stringify(o); } }catch(e){}
+  (d.venues||[]).forEach(v=>{ (v.turni||[]).forEach(t=>{ t.dal=sh(t.dal); t.al=sh(t.al); }); (v.chiusure||[]).forEach(c=>{ c.dal=sh(c.dal); c.al=sh(c.al); }); });
+  try{ if(d.settings && d.settings.societa){ const o=JSON.parse(d.settings.societa); (o.pianiQuota||[]).forEach(p=>(p.rate||[]).forEach(r=>{ r.scadenza=sh(r.scadenza); }));
+    if(o.preventivi && o.preventivi[s0] && s0!==s1){ o.preventivi[s1]=o.preventivi[s0]; delete o.preventivi[s0]; }
+    d.settings.societa=JSON.stringify(o); } }catch(e){}
   return d;
 };
-const SOC_DEMO_COLS=['athletes','matches','trainings','notes','payments','ledger','deadlines','staff','inventory'];
+const SOC_DEMO_COLS=['athletes','matches','trainings','notes','payments','ledger','deadlines','staff','inventory','venues'];
 demoCount = function(){ return SOC_DEMO_COLS.reduce((n,c)=>n+Store.list(c).filter(isDemo).length, 0); };
 demoClear = async function(){
   if(!confirm('Togliere tutti i dati di prova (atleti, partite, presenze, note, quote, cassa, scadenze, staff, magazzino e le squadre di prova)? Esercizi e sessioni restano.')) return;

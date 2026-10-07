@@ -10,8 +10,8 @@
    ================================================================== */
 "use strict";
 const Store = (() => {
-  const DBNAME = 'volleydesk', VERSION = 3;
-  const COLS = ['exercises', 'sessions', 'athletes', 'matches', 'trainings', 'notes', 'payments', 'ledger', 'deadlines', 'staff', 'inventory'];
+  const DBNAME = 'volleydesk', VERSION = 4;
+  const COLS = ['exercises', 'sessions', 'athletes', 'matches', 'trainings', 'notes', 'payments', 'ledger', 'deadlines', 'staff', 'inventory', 'venues'];
   const SETTING_KEYS = ['squadra', 'allenatore', 'noteGenerali', 'calendarioAllenamenti', 'colore', 'accento', 'logo', 'campionati', 'preferiti', 'licenza', 'provaDal', 'opzioni', 'squadre', 'societa', 'accessi', 'iscrizioni', 'promemoria'];
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/, TIME_RE = /^\d{1,2}:\d{2}$/;
   let idb = null;
@@ -162,7 +162,13 @@ const Store = (() => {
       createdAt: (old && old.createdAt) || n.createdAt || Date.now(), updatedAt: n.updatedAt || Date.now() };
   }
   /* ---------------------------------------------------------------- società */
-  const money = v => { if (v === null || v === undefined || v === '') return 0; const n = parseFloat(String(v).replace(/\s|€/g, '').replace(',', '.')); return isNaN(n) ? 0 : Math.round(n * 100) / 100; };
+  const money = v => {
+    if (v === null || v === undefined || v === '') return 0; if (typeof v === 'number') return isNaN(v) ? 0 : Math.round(v * 100) / 100;
+    let t = String(v).replace(/[\s€]/g, '');
+    if (t.includes(',') && t.includes('.')) t = t.lastIndexOf(',') > t.lastIndexOf('.') ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');   // 1.200,50 oppure 1,200.50
+    else if (t.includes(',')) t = t.replace(',', '.');
+    else if (/^-?\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '');                                                                          // 2.000
+    const n = parseFloat(t); return isNaN(n) ? 0 : Math.round(n * 100) / 100; };
   const dateOrEmpty = (v, what) => { v = s(v).trim(); if (v && !DATE_RE.test(v)) throw new Error('Data non valida' + (what ? ' (' + what + ')' : '') + ': ' + v); return v; };
   const yes = v => [true, 1, '1', 'true', 'si', 'sì'].includes(v);
   const stamp = (r, x, old) => { r.createdAt = (old && old.createdAt) || x.createdAt || Date.now(); r.updatedAt = x.updatedAt || Date.now(); return r; };
@@ -181,7 +187,8 @@ const Store = (() => {
     const data = dateOrEmpty(m.data, 'movimento'); if (!data) throw new Error('Inserisci la data del movimento');
     const importo = money(m.importo); if (!importo) throw new Error("Inserisci l'importo");
     return stamp({ id: s(m.id), data, tipo: m.tipo === 'U' ? 'U' : 'E', categoria: s(m.categoria).trim(), descrizione: s(m.descrizione).trim(), importo: Math.abs(importo),
-      metodo: s(m.metodo).trim(), controparte: s(m.controparte).trim(), documento: s(m.documento).trim(), stagione: s(m.stagione).trim(), squadra: s(m.squadra), note: s(m.note) }, m, old);
+      metodo: s(m.metodo).trim(), controparte: s(m.controparte).trim(), documento: s(m.documento).trim(), stagione: s(m.stagione).trim(), squadra: s(m.squadra), note: s(m.note),
+      staffId: s(m.staffId), natura: ['compenso', 'rimborso'].includes(m.natura) ? m.natura : '', rif: s(m.rif) }, m, old);
   }
   const RICORRENZE = ['', 'mensile', 'bimestrale', 'trimestrale', 'semestrale', 'annuale'];
   function normDeadline(d, old) {
@@ -208,7 +215,21 @@ const Store = (() => {
       a: s(c.a).trim(), data: dateOrEmpty(c.data, 'consegna'), quantita: toIntOrNull(c.quantita) || 1, restituito: yes(c.restituito), resoIl: dateOrEmpty(c.resoIl), note: s(c.note) }));
     return stamp(r, x, old);
   }
-  const NORM = { exercises: normEx, sessions: normSess, athletes: normAt, matches: normMatch, trainings: normTr, notes: normNote,
+  /* palestra con i suoi turni settimanali e i periodi di chiusura */
+  const TIME = v => { v = s(v).trim(); if (v && !TIME_RE.test(v)) throw new Error('Orario non valido: ' + v); return v ? v.padStart(5, '0') : ''; };
+  function normVenue(x, old) {
+    const nome = s(x.nome).trim(); if (!nome) throw new Error('Scrivi il nome della palestra');
+    const r = { id: s(x.id), nome, indirizzo: s(x.indirizzo).trim(), ente: s(x.ente).trim(), costoOrario: x.costoOrario === '' || x.costoOrario == null ? '' : money(x.costoOrario), note: s(x.note), attiva: x.attiva === undefined ? true : yes(x.attiva) };
+    r.turni = (Array.isArray(x.turni) ? x.turni : []).filter(t => t && typeof t === 'object').map(t => {
+      const g = parseInt(t.giorno, 10); if (!(g >= 1 && g <= 7)) throw new Error('Giorno del turno non valido');
+      const dalle = TIME(t.dalle), alle = TIME(t.alle); if (!dalle || !alle || alle <= dalle) throw new Error("Controlla gli orari del turno: l'ora di fine deve venire dopo quella di inizio");
+      return { id: s(t.id) || newId('tu'), giorno: g, dalle, alle, squadra: s(t.squadra), chi: s(t.chi).trim(), dal: dateOrEmpty(t.dal, 'inizio turno'), al: dateOrEmpty(t.al, 'fine turno'),
+        costoOrario: t.costoOrario === '' || t.costoOrario == null ? '' : money(t.costoOrario), note: s(t.note) };
+    });
+    r.chiusure = (Array.isArray(x.chiusure) ? x.chiusure : []).filter(c => c && typeof c === 'object').map(c => ({ id: s(c.id) || newId('ch'), dal: dateOrEmpty(c.dal, 'chiusura'), al: dateOrEmpty(c.al, 'chiusura') || dateOrEmpty(c.dal), motivo: s(c.motivo).trim() })).filter(c => c.dal);
+    return stamp(r, x, old);
+  }
+  const NORM = { exercises: normEx, venues: normVenue, sessions: normSess, athletes: normAt, matches: normMatch, trainings: normTr, notes: normNote,
     payments: normPay, ledger: normLedger, deadlines: normDeadline, staff: normStaff, inventory: normInv };
   function prep(c, body) {
     const old = mem[c].get(body.id);
@@ -231,6 +252,7 @@ const Store = (() => {
     return { exercises: ex.map(strip), sessions: se.map(strip), athletes: at.map(strip), matches: ma.map(strip), trainings: tr.map(strip), notes: no.map(strip),
       payments: [...mem.payments.values()].sort(byDate('scadenza')).map(strip), ledger: [...mem.ledger.values()].sort(byDate('data')).map(strip),
       deadlines: [...mem.deadlines.values()].sort(byDate('data')).map(strip), staff: [...mem.staff.values()].sort((a, b) => coll(a.cognome, b.cognome) || coll(a.nome, b.nome)).map(strip),
+      venues: [...mem.venues.values()].sort((a, b) => coll(a.nome, b.nome)).map(strip),
       inventory: [...mem.inventory.values()].sort((a, b) => coll(a.categoria, b.categoria) || coll(a.articolo, b.articolo)).map(strip),
       settings: getSettings(), info: {} };
   }
@@ -345,6 +367,7 @@ const Store = (() => {
     generic('ledger', data.ledger, (y, m) => s(y.data) === s(m.data) && money(y.importo) === money(m.importo) && s(y.descrizione) === s(m.descrizione), m => DATE_RE.test(s(m.data)));
     generic('deadlines', data.deadlines, (y, d) => s(y.titolo) === s(d.titolo) && s(y.data) === s(d.data), d => !!s(d.titolo).trim() && DATE_RE.test(s(d.data)));
     generic('staff', data.staff, (y, a) => lc(y.nome) === lc(a.nome) && lc(y.cognome) === lc(a.cognome), a => !!(s(a.nome).trim() || s(a.cognome).trim()));
+    generic('venues', data.venues, (y, x) => lc(y.nome) === lc(x.nome), x => !!s(x.nome).trim());
     generic('inventory', data.inventory, (y, x) => lc(y.articolo) === lc(x.articolo) && s(y.taglia) === s(x.taglia), x => !!s(x.articolo).trim());
     generic('notes', data.notes, (y, n) => s(y.titolo) === s(n.titolo) && s(y.testo) === s(n.testo), n => !!(s(n.titolo).trim() || s(n.testo).trim()));
     // un id messo e poi tolto nella stessa importazione: vale l'ultima operazione
@@ -357,7 +380,7 @@ const Store = (() => {
 
   /* ---------------------------------------------------------------- "server" */
   const ROUTES = [[/^\/api\/quote\/([\w-]+)$/, 'payments'], [/^\/api\/movimenti\/([\w-]+)$/, 'ledger'], [/^\/api\/scadenze\/([\w-]+)$/, 'deadlines'],
-    [/^\/api\/staff\/([\w-]+)$/, 'staff'], [/^\/api\/magazzino\/([\w-]+)$/, 'inventory'], [/^\/api\/esercizi\/([\w-]+)$/, 'exercises'], [/^\/api\/sessioni\/([\w-]+)$/, 'sessions'], [/^\/api\/atleti\/([\w-]+)$/, 'athletes'],
+    [/^\/api\/staff\/([\w-]+)$/, 'staff'], [/^\/api\/magazzino\/([\w-]+)$/, 'inventory'], [/^\/api\/palestre\/([\w-]+)$/, 'venues'], [/^\/api\/esercizi\/([\w-]+)$/, 'exercises'], [/^\/api\/sessioni\/([\w-]+)$/, 'sessions'], [/^\/api\/atleti\/([\w-]+)$/, 'athletes'],
     [/^\/api\/partite\/([\w-]+)$/, 'matches'], [/^\/api\/allenamenti\/([\w-]+)$/, 'trainings'], [/^\/api\/note\/([\w-]+)$/, 'notes']];
   function route(url) { for (const [re, c] of ROUTES) { const m = re.exec(url); if (m) return [c, decodeURIComponent(m[1])]; } return [null, null]; }
   async function api(method, url, body) {
