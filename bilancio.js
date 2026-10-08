@@ -37,7 +37,7 @@ function seasonElapsed(season){
 /* suggerimenti per alcune voci */
 function prevHints(season){
   const H={E:{}, U:{}};
-  const q=r2(socData().pay.filter(p=>p.stagione===season && !p.annullata).reduce((s,p)=>s+p.importo,0));
+  const q=r2(socData().payA.filter(p=>p.stagione===season && !p.annullata).reduce((s,p)=>s+p.importo,0));
   if(q) H.E['Quote atleti']=[q, 'quote assegnate'];
   if(typeof palSeasonCost==='function'){ const c=palSeasonCost(season); if(c) H.U['Affitto palestra']=[c, 'dai turni delle palestre']; }
   const st=staffSeasonEstimate(); if(st) H.U['Rimborsi e compensi staff']=[st, 'pagati negli ultimi 12 mesi'];

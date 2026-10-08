@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# versione: 2
+# versione: 4
 """Volleydesk – promemoria automatici via email.
 
 Gira su GitHub (azione programmata nell'archivio privato dei dati, una volta al giorno).
@@ -93,11 +93,24 @@ def wa_number(c):
     return d
 
 
+def paypal_name(v):
+    v = (v or '').strip()
+    m = re.search(r'paypal\.me/([^/?#\s]+)', v, re.I)
+    if m:
+        v = m.group(1)
+    return re.sub(r'[^\w.-]', '', v.lstrip('@'))
+
+
+def satispay_url(v):
+    v = (v or '').strip()
+    return '' if not v else (v if re.match(r'^https?://', v, re.I) else 'https://' + v.lstrip('/'))
+
+
 def link_pagamento(a, righe, soc, cfg):
     """Link alla pagina paga.html dell'app, con le rate da pagare (stesso formato dell'app)."""
     url = cfg.get('pagaUrl') or ''
     iban = re.sub(r'\s+', '', soc.get('iban') or '')
-    if not url or not (soc.get('paypalMe') or soc.get('satispayLink') or iban):
+    if not url or not (paypal_name(soc.get('paypalMe')) or satispay_url(soc.get('satispayLink')) or iban):
         return ''
     nome = (a.get('nome', '') + ' ' + a.get('cognome', '')).strip()
     stag = (righe[0][1].get('stagione') or '') if righe else ''
@@ -105,7 +118,7 @@ def link_pagamento(a, righe, soc, cfg):
     e = eta(a)
     P = {'v': 1, 's': soc.get('ragioneSociale') or '', 'a': nome, 'r': [[x[1].get('descrizione') or x[1].get('voce') or 'Quota', x[2], x[1].get('scadenza') or ''] for x in righe],
          't': r2(sum(x[2] for x in righe)), 'q': [x[1]['id'] for x in righe], 'c': caus, 'i': iban, 'h': soc.get('intestatarioIban') or soc.get('ragioneSociale') or '',
-         'pp': (soc.get('paypalMe') or '').strip(), 'sp': (soc.get('satispayLink') or '').strip(), 'wa': wa_number(soc.get('waSegreteria') or ''), 'em': soc.get('email') or '',
+         'pp': paypal_name(soc.get('paypalMe')), 'sp': satispay_url(soc.get('satispayLink')), 'wa': wa_number(soc.get('waSegreteria') or ''), 'em': soc.get('email') or '',
          'd': bool(soc.get('detrazione', True) and e is not None and 5 <= e <= 18)}
     P = {k: v for k, v in P.items() if v not in ('', False)}
     return url + '#p=' + base64.urlsafe_b64encode(json.dumps(P, ensure_ascii=False, separators=(',', ':')).encode()).decode().rstrip('=')
@@ -127,7 +140,7 @@ def calcola(doc, reg, cfg):
     nome_soc = soc.get('ragioneSociale') or S.get('squadra') or 'la società'
     firma = cfg.get('firma') or soc.get('firma') or ('La segreteria di ' + nome_soc)
     inviati = reg.get('inviati', {})
-    atleti = {a['id']: a for a in C.get('athletes', []) if a.get('id')}
+    atleti = {a['id']: a for a in C.get('athletes', []) if a.get('id') and not a.get('cestino')}   # chi è nel cestino non riceve nulla
     out = []
 
     def gia(k):
@@ -217,7 +230,7 @@ def calcola(doc, reg, cfg):
                 continue
             dov = r2(p.get('importo', 0) - sum(float(x.get('importo') or 0) for x in p.get('incassi', [])))
             sc = gd(p.get('scadenza'))
-            if dov > 0.004 and sc and sc < OGGI:
+            if dov > 0.004 and sc and sc < OGGI and p.get('atletaId') in atleti:
                 a = atleti.get(p.get('atletaId'), {})
                 scad.append(f"  • {a.get('cognome', '')} {a.get('nome', '')}: {p.get('descrizione') or 'quota'} {eur(dov)} (dal {it(sc)})")
                 tot += dov

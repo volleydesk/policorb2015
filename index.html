@@ -1942,7 +1942,7 @@ async function api(method, url, body, opts={}){
   catch(e){ if(e && /bloccato|annullata|Scrittura/.test(e.message||'')) setOffline(true); throw e; }
 }
 function setOffline(v){ offline=v; const b=$('#offline'); if(b) b.classList.toggle('hidden', !v); }
-async function loadState(){ const st=await api('GET','/api/stato'); db={exercises:st.exercises, sessions:st.sessions, athletes:st.athletes||[], matches:st.matches||[], trainings:st.trainings||[], notes:st.notes||[], settings:st.settings}; info=st.info||{}; teamApply(); }
+async function loadState(){ const st=await api('GET','/api/stato'); db={exercises:st.exercises, sessions:st.sessions, athletes:(st.athletes||[]).filter(a=>!a.cestino), matches:st.matches||[], trainings:st.trainings||[], notes:st.notes||[], settings:st.settings}; info=st.info||{}; teamApply(); }
 function saveFail(e){ console.error(e); toast(offline ? 'Archivio non disponibile: modifica NON salvata' : 'Errore di salvataggio: '+(e && e.message || '')); }
 const persist = {
   ex: e => api('PUT','/api/esercizi/'+encodeURIComponent(e.id), e),
@@ -3304,7 +3304,7 @@ function exportSelected(){
   if(sel.exercises){ const F=favSet(); out.exercises=st.exercises.filter(e=>o.exMode==='fav'?F.has(e.id):o.exMode==='mine'?e.origine!=='catalogo':true); }
   if(sel.sessions){ const have=new Set(out.exercises.map(e=>e.id)), need=new Set(out.sessions.flatMap(s=>s.items.filter(i=>i.type==='ex').map(i=>i.exId)));
     st.exercises.forEach(e=>{ if(need.has(e.id) && !have.has(e.id)) out.exercises.push(e); }); }
-  if(sel.athletes) out.athletes=st.athletes;
+  if(sel.athletes) out.athletes=st.athletes.filter(a=>!a.cestino);
   if(sel.matches) out.matches=sel.athletes?st.matches:st.matches.map(m=>Object.assign({}, m, {convocati:[], assenti:[], disponibili:[], formazione:null, stats:null, referto:null}));
   if(sel.trainings) out.trainings=sel.athletes?st.trainings:st.trainings.map(t=>Object.assign({}, t, {presenze:{}}));
   if(sel.notes) out.notes=st.notes||[];
@@ -5376,7 +5376,7 @@ async function demoClear(){
 }
 
 /* ===== Versione dell'app ===== */
-const APP_VERSION='v8-2026-10-07';
+const APP_VERSION='v10-2026-10-08';
 function verLabel(v){ const m=String(v||'').match(/^v(\d+)-(\d{4})-(\d\d)-(\d\d)/); return m?`${m[1]} del ${+m[4]}/${+m[3]}/${m[2]}`:String(v||'?'); }
 const verNum=v=>{ const m=String(v||'').match(/^v(\d+)/); return m?+m[1]:0; };
 let swReg=null;
@@ -5434,7 +5434,7 @@ async function teamAdd(){
 }
 function teamCounts(id){ const st=Store.fullState(), first=(teamsRaw()[0]||{}).id;
   const rt=r=>(r.squadra||first)===id, at=a=>{ const s=(a.squadre&&a.squadre.length)?a.squadre:[first]; return s.length===1 && s[0]===id; };
-  return {at:st.athletes.filter(at).length, ma:st.matches.filter(rt).length, tr:st.trainings.filter(rt).length, no:(st.notes||[]).filter(rt).length}; }
+  return {at:st.athletes.filter(a=>!a.cestino && at(a)).length, ma:st.matches.filter(rt).length, tr:st.trainings.filter(rt).length, no:(st.notes||[]).filter(rt).length}; }
 async function teamRename(id){
   const L=teamsRaw(), t=L.find(x=>x.id===id); if(!t) return;
   const name=(prompt('Nuovo nome della squadra:', t.squadra||'')||'').trim(); if(!name) return;
@@ -5727,7 +5727,7 @@ function matchTitleTeam(m,t){ const me=(t&&t.squadra)||'Noi', o=m.avversario||'?
 function teamConflicts(days){
   const L=teamsRaw(); if(L.length<2) return [];
   const st=Store.fullState(), first=L[0].id, items=agendaItems(days||45), out=[];
-  st.athletes.filter(a=>a.iscritto && (a.squadre||[]).length>1).forEach(a=>{
+  st.athletes.filter(a=>a.iscritto && !a.cestino && (a.squadre||[]).length>1).forEach(a=>{
     const mine=items.filter(it=>a.squadre.includes(it.team) && (it.k==='t' || !it.conv.length || it.conv.includes(a.id)));
     const byD={}; mine.forEach(it=>{ (byD[it.data]=byD[it.data]||[]).push(it); });
     Object.entries(byD).forEach(([d,its])=>{ if(new Set(its.map(i=>i.team)).size>1 && its.some(i=>i.k==='m')) out.push({a, data:d, its}); });
@@ -6321,8 +6321,13 @@ const actions={
   'edit-at': b=>openAtProfile(b.dataset.id),
   'at-edit': b=>openAtModal(b.dataset.id),
   'save-at': ()=>saveAt(),
-  'del-at': b=>{ const a=getAt(b.dataset.id); if(!a || !confirm(`Eliminare «${fullName(a)}» dall'anagrafica?`)) return;
-    api('DELETE','/api/atleti/'+encodeURIComponent(a.id)).then(()=>{ db.athletes=db.athletes.filter(x=>x.id!==a.id); closeModal(); render(); toast('Atleta eliminato'); }).catch(saveFail); },
+  'del-at': b=>{ const a=getAt(b.dataset.id); if(!a) return;
+    /* per la segreteria l'atleta va nel cestino (Società › Cestino): sparisce da squadre, quote e promemoria ma si può ripristinare;
+       sul dispositivo dell'allenatore esce dalla squadra come prima */
+    const bin=!(typeof isCoach==='function' && isCoach());
+    if(!confirm(bin?`Spostare «${fullName(a)}» nel cestino?\n\nSparisce dalle squadre, dalle quote e dai promemoria. Puoi ripristinarlo o eliminarlo del tutto da Società › Cestino.`:`Eliminare «${fullName(a)}» dall'anagrafica?`)) return;
+    const go=bin?api('PUT','/api/atleti/'+encodeURIComponent(a.id), Object.assign({}, a, {cestino:new Date().toISOString(), updatedAt:Date.now()})):api('DELETE','/api/atleti/'+encodeURIComponent(a.id));
+    go.then(()=>{ db.athletes=db.athletes.filter(x=>x.id!==a.id); closeModal(); render(); toast(bin?'Spostato nel cestino':'Atleta eliminato'); }).catch(saveFail); },
   'print-at': ()=>printAthletes(),
   'new-match': ()=>{ const m=newMatch(); { const c=campSel(); if(c!=='__all' && c!==CAMP_NONE){ m.competizione=c; persist.match(m).catch(saveFail); } } go('partita',{matchId:m.id}); setTimeout(()=>$('[data-mf=data]')?.focus(),50); },
   'open-match': b=>go('partita',{matchId:b.dataset.id, mTab:null, mEdit:false}),
@@ -6548,5 +6553,6 @@ if('serviceWorker' in navigator && location.protocol!=='file:'){
 <script src="palestre.js"></script>
 <script src="pagamenti.js"></script>
 <script src="documenti.js"></script>
+<script src="cestino.js"></script>
 </body>
 </html>

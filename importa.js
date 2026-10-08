@@ -182,7 +182,7 @@ function impSplitName(full, cognomePrima){
   return cognomePrima ? [p[0], p.slice(1).join(' ')] : [p[p.length - 1], p.slice(0, -1).join(' ')];
 }
 function impPlanAtleti(data, get, out, rowN){
-  const o = ui.imp, L = Store.list('athletes'), seen = new Map();
+  const o = ui.imp, L = [...Store.list('athletes'), ...Store.trash().filter(x => x._c === 'athletes')], seen = new Map();
   const FIELDS = ['sesso','dataNascita','luogoNascita','codiceFiscale','cellulare','email','genitore','cfGenitore','telGenitore','emailGenitore','ruolo','numeroMaglia','taglia','scadenzaVisita','numeroDocumento','scadenzaDocumento','tessera','scadenzaTessera','privacy','note'];
   const DATES = ['dataNascita','scadenzaVisita','scadenzaDocumento','scadenzaTessera'];
   data.forEach((r, j) => {
@@ -208,7 +208,8 @@ function impPlanAtleti(data, get, out, rowN){
     const ex = impFindAt(L, v.codiceFiscale, cog, nom, v.dataNascita);
     if(ex){
       if(!o.aggiorna){ out.skip.push({ n: rowN(j), why: fullName(ex) + ' è già presente' }); return; }
-      const a = clone(ex); let ch = [];
+      const a = clone(ex); let ch = []; delete a._c;
+      if(a.cestino){ a.cestino = ''; ch.push('torna dal cestino'); }
       for(const [k, x] of Object.entries(v)) if(String(a[k] || '') !== x){ a[k] = x; ch.push(k); }
       if(team && teamMulti() && !atTeams(a).includes(team)){ a.squadre = [...new Set([...(a.squadre || []).filter(Boolean), team])]; ch.push('squadra'); }
       if(!ch.length){ out.preview.push({ st: 'same', t: fullName(a), s: 'già presente, niente da aggiornare' }); return; }

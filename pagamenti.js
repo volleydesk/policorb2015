@@ -15,7 +15,12 @@ const PG_B64 = s => { const u8 = new TextEncoder().encode(s); let o = ''; for(le
 const PG_UNB64 = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), c => c.charCodeAt(0)));
 const PG_RE = /VDP1-([\w-]+)!/g;
 
-function pgCfg(){ const c = socCfg(); return { pp: String(c.paypalMe || '').trim(), sp: String(c.satispayLink || '').trim(), iban: String(c.iban || '').replace(/\s+/g, ''), wa: String(c.waSegreteria || (typeof iscCfg === 'function' ? iscCfg().wa : '') || '').trim() }; }
+/* PayPal.me: va bene il nome, «@nome» o il link intero (paypal.me/nome, https://www.paypal.me/nome/10) */
+function pgPayPalName(v){ v = String(v || '').trim(); const m = /paypal\.me\/([^/?#\s]+)/i.exec(v); if(m) v = m[1]; return v.replace(/^@/, '').replace(/[^\w.-]/g, ''); }
+function pgSatispayUrl(v){ v = String(v || '').trim(); if(!v) return ''; return /^https?:\/\//i.test(v) ? v : 'https://' + v.replace(/^\/+/, ''); }
+function pgMethods(){ const c = pgCfg(); return [['PayPal', !!c.pp, 'nome PayPal.me'], ['Satispay', !!c.sp, 'link Satispay'], ['Bonifico', !!c.iban, 'IBAN']]; }
+function pgMethodsHTML(){ return pgMethods().map(([l, on, what]) => on ? `<span class="pg-m on">✓ ${l}</span>` : `<span class="pg-m off" title="Manca il ${what} in Dati società">✗ ${l}</span>`).join(''); }
+function pgCfg(){ const c = socCfg(); return { pp: pgPayPalName(c.paypalMe), sp: pgSatispayUrl(c.satispayLink), iban: String(c.iban || '').replace(/\s+/g, ''), wa: String(c.waSegreteria || (typeof iscCfg === 'function' ? iscCfg().wa : '') || '').trim() }; }
 const pgOn = () => { const c = pgCfg(); return !!(c.pp || c.sp || c.iban); };
 function pgCausale(a, p){ const c = socCfg(); return (c.causale || 'Quota {stagione} – {atleta}').replace('{stagione}', (p && p.stagione) || socSeason()).replace('{atleta}', [a.nome, a.cognome].filter(Boolean).join(' ')); }
 /* link alla pagina di pagamento per le rate aperte di un atleta (o solo alcune) */
@@ -64,7 +69,8 @@ function pgLinkModal(aid){
   const a = socAt(aid), link = pgLink(a), pr = socPayer(a), acc = socAccount(aid, null);
   const msg = `Ciao ${(pr.nome || '').split(' ')[0]}, per ${[a.nome, a.cognome].join(' ')} risultano da versare ${eur(acc.residuo)}. Puoi pagare qui con PayPal, Satispay o bonifico: ${link}\nGrazie! ${socName()}`;
   openModal(`<div class="modal-box" style="max-width:560px"><div class="modal-head"><div style="flex:1"><h2>Link per pagare</h2><div class="muted" style="font-size:13.5px">${esc(fullName(a))} · ${eur(acc.residuo)}</div></div><button class="iconbtn" data-action="soc-at" data-id="${esc(aid)}">✕</button></div>
-    <div class="modal-body"><div class="isc-link"><input type="text" readonly value="${esc(link)}" id="pg-url"><button class="btn sm" data-action="pg-copy">Copia</button><a class="btn sm" href="${esc(link)}" target="_blank" rel="noopener">Apri</a></div>
+    <div class="modal-body"><div class="pg-ms">Nella pagina: ${pgMethodsHTML()}${pgMethods().some(m => !m[1]) ? ` <a href="#" data-action="pg-cfg">imposta gli altri metodi</a>` : ''}</div>
+    <div class="isc-link"><input type="text" readonly value="${esc(link)}" id="pg-url"><button class="btn sm" data-action="pg-copy">Copia</button><a class="btn sm" href="${esc(link)}" target="_blank" rel="noopener">Apri</a></div>
     <label class="f" style="margin-top:12px">Messaggio<textarea id="pg-msg" rows="5">${esc(msg)}</textarea></label>
     <p class="muted" style="font-size:12.5px;margin-bottom:0">La pagina mostra le rate da pagare, apre PayPal con l'importo già scritto, Satispay e i dati del bonifico. Quando la famiglia ha pagato può avvisarti con «Ho pagato»: ti arriva un codice da incollare in Quote → Conferme di pagamento.</p></div>
     <div class="modal-foot"><span style="flex:1"></span>${pr.email ? `<a class="btn" href="mailto:${encodeURIComponent(pr.email)}?subject=${encodeURIComponent('Pagamento quota – ' + socName())}&body=${encodeURIComponent(msg)}">✉ Email</a>` : ''}${pr.tel ? `<a class="btn wa" href="https://wa.me/${waNumber(pr.tel)}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}</div></div>`);
@@ -183,12 +189,15 @@ socDatiHTML = function(){
     <label class="f">PayPal.me (nome o link)<input type="text" data-soc="paypalMe" value="${esc(c.paypalMe || '')}" placeholder="es. VolleyCorbetta"></label>
     <label class="f">Link Satispay della società<input type="url" data-soc="satispayLink" value="${esc(c.satispayLink || '')}" placeholder="https://…"></label>
     <label class="f">Cellulare della segreteria (per gli avvisi)<input type="tel" data-soc="waSegreteria" value="${esc(c.waSegreteria || '')}" placeholder="333 1234567"></label></div>
-    <p class="muted" style="font-size:12.5px;margin:8px 0 0">Con PayPal.me la famiglia trova l'importo già scritto. Il link Satispay lo trovi in Satispay Business (pagina o QR del negozio): nell'app la famiglia scrive l'importo. Per il bonifico si usano IBAN e causale qui sopra. Nei solleciti il link alla pagina di pagamento si aggiunge da solo (o dove scrivi {link}). ${pgOn() ? '<a href="' + esc(pgDemoLink()) + '" target="_blank" rel="noopener">Vedi come appare</a>' : ''}</p></div>
+    <p class="muted" style="font-size:12.5px;margin:8px 0 0">Con PayPal.me la famiglia trova l'importo già scritto. Il link Satispay lo trovi in Satispay Business (pagina o QR del negozio): nell'app la famiglia scrive l'importo. Per il bonifico si usano IBAN e causale qui sopra. Nei solleciti il link alla pagina di pagamento si aggiunge da solo (o dove scrivi {link}). </p>
+    <div class="pg-ms" id="pg-ms" style="margin-top:10px">Nella pagina di pagamento: ${pgMethodsHTML()} <button type="button" class="btn sm" data-action="pg-preview">Vedi come appare</button></div></div>
     <div class="panel"><div class="sd-ph"><h2>Piani delle quote</h2>`);
 };
 function pgDemoLink(){ const a = socData().at.find(x => socAccount(x.id, null).residuo > 0); return a ? pgLink(a) : ''; }
 Object.assign(actions, {
   'pg-link': b => pgLinkModal(b.dataset.a),
+  'pg-preview': () => { const u = pgDemoLink(); if(!u){ alert(pgOn() ? 'Per l\'anteprima serve almeno un atleta con una rata da pagare.' : 'Inserisci almeno un metodo: nome PayPal.me, link Satispay o IBAN.'); return; } window.open(u, '_blank', 'noopener'); },
+  'pg-cfg': () => { closeModal(); ui.socTab = 'dati'; go('societa'); setTimeout(() => { const i = document.querySelector('[data-soc=paypalMe]'); if(i){ i.scrollIntoView({ block: 'center' }); i.focus(); } }, 80); },
   'pg-copy': () => copyText($('#pg-url').value),
   'pg-conf': () => pgConfModal(),
   'pg-read': () => { ui.pgList = pgParse($('#pg-paste').value); $('#pg-list').innerHTML = pgListHTML(); },
@@ -214,6 +223,7 @@ document.addEventListener('change', e => {
   if(t.dataset.pgmap && ui.pgEst){ if(t.value === '') delete ui.pgEst.map[t.dataset.pgmap]; else ui.pgEst.map[t.dataset.pgmap] = +t.value; pgEstRender(); return; }
   if(t.dataset.pgwho !== undefined && ui.pgEst){ ui.pgEst.who[+t.dataset.pgwho] = t.value; const c = document.querySelector(`[data-pgsel="${t.dataset.pgwho}"]`); if(c) c.checked = !!t.value; return; }
   if(t.dataset.pgsel !== undefined && ui.pgEst){ ui.pgEst.sel[+t.dataset.pgsel] = t.checked; }
+  if(['paypalMe', 'satispayLink', 'iban'].includes(t.dataset.soc)) setTimeout(() => { const el = $('#pg-ms'); if(el) el.innerHTML = 'Nella pagina di pagamento: ' + pgMethodsHTML() + ' <button type="button" class="btn sm" data-action="pg-preview">Vedi come appare</button>'; }, 0);
 });
 
 /* indirizzo della pagina di pagamento per le email automatiche (promemoria.py) */
@@ -223,10 +233,10 @@ if(_pgPromHTML) promHTML = function(){
   if(promCfg().pagaUrl !== want && location.protocol.startsWith('http')) promSet({ pagaUrl: want }).catch(() => {});
   let h = _pgPromHTML();
   const S = ui.promStato;
-  if(S && S.ok && S.py && S.py !== '?' && +S.py < PROM_PY_V) h = h.replace('<div class="prom-st ok">', `<div class="warn">È disponibile una versione nuova dei promemoria (con il link per pagare online): premi «Aggiorna i file».</div><div class="prom-st ok">`);
+  if(S && S.ok && S.py && S.py !== '?' && +S.py < PROM_PY_V) h = h.replace('<div class="prom-st ok">', `<div class="warn">È disponibile una versione nuova dei promemoria (link per pagare online, niente avvisi a chi è nel cestino): premi «Aggiorna i file».</div><div class="prom-st ok">`);
   return h;
 };
-const PROM_PY_V = 2;
+const PROM_PY_V = 4;
 
 GUIDE.splice(2, 0, ['💳', 'Pagamenti online: PayPal, Satispay, bonifico', `
 <p>In <b>Dati società → Pagamenti online</b> inserisci il nome PayPal.me della società, il link Satispay e il cellulare della segreteria (l'IBAN è già nella sezione Pagamenti).</p>

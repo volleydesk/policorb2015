@@ -123,6 +123,7 @@ const Store = (() => {
     r.iscritto = [true, 1, '1', 'si', 'SI', 'Si', 'Sì', 'true'].includes(a.iscritto);
     r.squadre = Array.isArray(a.squadre) ? a.squadre.filter(Boolean).map(String) : [];
     r.infortuni = Array.isArray(a.infortuni) ? a.infortuni.filter(x => x && typeof x === 'object').map(x => ({ id: s(x.id), cosa: s(x.cosa).trim(), dal: s(x.dal).trim(), rientro: s(x.rientro).trim(), note: s(x.note), chiuso: !!x.chiuso })) : [];
+    r.cestino = s(a.cestino).trim();   // data e ora in cui è stato messo nel cestino ('' = attivo)
     r.createdAt = (old && old.createdAt) || a.createdAt || Date.now(); r.updatedAt = a.updatedAt || Date.now();
     return r;
   }
@@ -206,6 +207,7 @@ const Store = (() => {
     r.scadenzaQualifica = dateOrEmpty(x.scadenzaQualifica, 'qualifica'); r.scadenzaCasellario = dateOrEmpty(x.scadenzaCasellario, 'casellario');
     r.attivo = x.attivo === undefined ? true : yes(x.attivo);
     r.squadre = Array.isArray(x.squadre) ? x.squadre.filter(Boolean).map(String) : [];
+    r.cestino = s(x.cestino).trim();
     return stamp(r, x, old);
   }
   function normInv(x, old) {
@@ -505,7 +507,9 @@ const Store = (() => {
     COLS, init: async () => { idb = await open(); await loadAll(); }, api, fullState, snapshot, applyRemote, replaceAll, isEmpty,
     getMeta: k => meta[k], setMeta, onChange: f => listeners.add(f), seq: () => seq,
     insertMissingSeed, seedExercise, prep, commitLocal, legacyInfo, importLegacy, money, applyTeam, getSettings, stamp: () => now(), wipe, putFile, getFile, delFile, fileKeys,
-    list: c => [...(mem[c] || new Map()).values()].map(strip),   // una sola collezione (tutte le squadre)
+    list: c => [...(mem[c] || new Map()).values()].filter(r => !r.cestino).map(strip),   // una sola collezione (tutte le squadre), senza il cestino
+    trash: () => ['athletes', 'staff'].flatMap(c => [...mem[c].values()].filter(r => r.cestino).map(r => Object.assign(strip(r), { _c: c }))),   // anagrafiche nel cestino
+    any: (c, id) => { const r = mem[c] && mem[c].get(id); return r ? strip(r) : null; },   // una scheda, anche se è nel cestino
     counts: () => Object.fromEntries(COLS.map(c => [c, mem[c].size]))
   };
 })();

@@ -80,7 +80,7 @@ function iscListHTML(){
       ${done ? '<p class="ok-line">✓ Già importata</p>' : `<div class="act">${piani.length ? `<select data-iscplan="${i}"><option value="">Nessuna quota</option>${piani.map(p => `<option value="${p.id}">Assegna «${esc(p.nome)}»</option>`).join('')}</select>` : ''}<button class="btn sm primary" data-action="isc-add" data-i="${i}">${ex ? 'Aggiorna la scheda di ' + esc(fullName(ex)) : 'Aggiungi in anagrafica'}</button></div>`}</div>`; }).join('')}</div>`;
 }
 function iscMatch(r){
-  const a = r.at, L = Store.list('athletes');
+  const a = r.at, L = [...Store.list('athletes'), ...Store.trash().filter(x => x._c === 'athletes')];   // anche chi è nel cestino: torna attivo
   return L.find(x => a.codiceFiscale && (x.codiceFiscale || '').toUpperCase() === a.codiceFiscale) ||
     L.find(x => impNorm(x.cognome) === impNorm(a.cognome) && impNorm(x.nome) === impNorm(a.nome) && (!x.dataNascita || x.dataNascita === a.dataNascita)) || null;
 }
@@ -98,7 +98,7 @@ async function iscAdd(i){
   ['nome','cognome','sesso','dataNascita','luogoNascita','codiceFiscale','indirizzo','email','cellulare','taglia','scadenzaVisita'].forEach(k => put(k, a[k]));
   put('genitore', g.nome); put('cfGenitore', g.cf); put('telGenitore', g.tel); put('emailGenitore', g.email);
   at.privacy = r.consensi && r.consensi.privacy ? 'si' : (at.privacy || ''); at.consensoFoto = r.consensi && r.consensi.foto ? 'si' : '';
-  at.iscritto = true;
+  at.iscritto = true; at.cestino = ''; delete at._c;
   const tid = r.squadra === '_' ? '' : r.squadra;
   if(teamMulti() && tid && teamsRaw().some(t => t.id === tid)) at.squadre = [...new Set([...(ex ? atTeams(ex) : []), tid])];
   else if(teamMulti() && !ex) at.squadre = [teamCur()];

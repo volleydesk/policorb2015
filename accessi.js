@@ -41,7 +41,7 @@ Sync.setHub({
   },
   belongs(c, r, id){
     if(c==='exercises' || c==='sessions') return true;
-    if(c==='athletes') return atTeams(r).includes(id);
+    if(c==='athletes') return !r.cestino && atTeams(r).includes(id);   // chi è nel cestino esce dalla squadra
     return recTeam(r)===id;
   },
   strip(c, r){

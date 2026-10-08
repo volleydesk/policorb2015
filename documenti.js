@@ -26,8 +26,8 @@ const docLabel = t => (DOC_T[t] || DOC_T.altro)[1];
 const docIc = t => (DOC_T[t] || DOC_T.altro)[0];
 function docOwner(rif){
   const [k, id] = rif.split(':');
-  if(k === 'at'){ const a = socAt(id); return a ? fullName(a) : 'Atleta eliminato'; }
-  if(k === 'st'){ const x = socData().staff.find(s => s.id === id); return x ? fullName(x) : 'Staff eliminato'; }
+  if(k === 'at') return socAtName(id);
+  if(k === 'st'){ const x = socData().staff.find(s => s.id === id); if(x) return fullName(x); const t = socData().bin.get('staff:' + id); return t ? fullName(t) + ' (nel cestino)' : 'Staff eliminato'; }
   if(k === 'mv'){ const m = socData().led.find(x => x.id === id); return m ? (m.descrizione || m.categoria || 'Movimento') + ' · ' + shortDate(m.data) : 'Movimento eliminato'; }
   return 'Società';
 }

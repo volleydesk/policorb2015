@@ -43,8 +43,9 @@ const socName = () => socCfg().ragioneSociale || db.settings.squadra || 'la soci
 let SOCD = null;
 function socData(){
   if(!SOCD){
-    const at=Store.list('athletes');
-    SOCD = { at, atMap:new Map(at.map(a=>[a.id,a])), pay:Store.list('payments'), led:Store.list('ledger'), dl:Store.list('deadlines'), staff:Store.list('staff'), inv:Store.list('inventory'), ven:Store.list('venues') };
+    const at=Store.list('athletes'), atMap=new Map(at.map(a=>[a.id,a])), pay=Store.list('payments'), bin=Store.trash();
+    /* pay: tutte le quote (servono alla cassa e ai numeri di ricevuta); payA: solo quelle degli atleti attivi (viste, totali, solleciti) */
+    SOCD = { at, atMap, pay, payA:pay.filter(p=>atMap.has(p.atletaId)), bin:new Map(bin.map(x=>[x._c+':'+x.id, x])), led:Store.list('ledger'), dl:Store.list('deadlines'), staff:Store.list('staff'), inv:Store.list('inventory'), ven:Store.list('venues') };
   }
   return SOCD;
 }
@@ -54,7 +55,7 @@ async function socPut(c, r){ r.updatedAt=Date.now(); if(!r.createdAt) r.createdA
 async function socDel(c, id){ await api('DELETE', '/api/'+SOC_ROUTE[c]+'/'+encodeURIComponent(id)); SOCD=null; }
 async function socBulk(items, dels){ await api('POST', '/api/multipli', {items, dels:dels||[]}); SOCD=null; }
 const socAt = id => socData().atMap.get(id);
-const socAtName = id => { const a=socAt(id); return a ? fullName(a) : 'Atleta eliminato'; };
+const socAtName = id => { const a=socAt(id); if(a) return fullName(a); const t=socData().bin.get('athletes:'+id); return t ? fullName(t)+' (nel cestino)' : 'Atleta eliminato'; };
 function socTeamOf(a){ if(!a || !teamMulti()) return ''; const L=teamsRaw(); return atTeams(a).map(id=>{ const i=L.findIndex(t=>t.id===id); return i>=0?teamLabel(L[i],i):''; }).filter(Boolean).join(', '); }
 function socRefresh(){ SOCD=null; if(ui.view==='societa'){ const y=window.scrollY; render(); window.scrollTo(0,y); } }
 
@@ -126,6 +127,7 @@ function socPayer(a){
 function socNextReceipt(iso){
   const y=(iso||todayISO()).slice(0,4); let max=0;
   socData().pay.forEach(p=>(p.incassi||[]).forEach(x=>{ const m=/^(\d+)\/(\d{4})$/.exec(x.ricevuta||''); if(m && m[2]===y) max=Math.max(max,+m[1]); }));
+  socData().led.forEach(l=>{ const m=/^Ricevuta (\d+)\/(\d{4})$/.exec(l.documento||''); if(m && m[2]===y) max=Math.max(max,+m[1]); });   // ricevute di anagrafiche eliminate
   return (max+1)+'/'+y;
 }
 /* tutti gli incassi delle quote, come movimenti di prima nota */
@@ -144,7 +146,7 @@ function socMovements(range){
 function socAgenda(horizon){
   const td=todayISO(), D=socData(), out=[], lim=horizon===undefined?365:horizon;
   const add=(o)=>{ const n=daysTo(o.d); if(n===null || n>lim) return; o.n=n; out.push(o); };
-  D.pay.forEach(p=>{ const due=payDue(p); if(due>0 && p.scadenza) add({d:p.scadenza, k:'quote', ic:'💶', t:socAtName(p.atletaId), s:payDesc(p)+(payPaid(p)>0?' · versati '+eur(payPaid(p)):''), imp:due, act:'soc-at', id:p.atletaId}); });
+  D.payA.forEach(p=>{ const due=payDue(p); if(due>0 && p.scadenza) add({d:p.scadenza, k:'quote', ic:'💶', t:socAtName(p.atletaId), s:payDesc(p)+(payPaid(p)>0?' · versati '+eur(payPaid(p)):''), imp:due, act:'soc-at', id:p.atletaId}); });
   D.at.filter(a=>a.iscritto).forEach(a=>{
     if(a.scadenzaVisita) add({d:a.scadenzaVisita, k:'atleti', ic:'🩺', t:fullName(a), s:'Visita medica', act:'soc-at-edit', id:a.id});
     if(a.scadenzaTessera) add({d:a.scadenzaTessera, k:'atleti', ic:'🎫', t:fullName(a), s:'Tesseramento'+(a.tessera?' n° '+a.tessera:''), act:'soc-at-edit', id:a.id});
@@ -197,7 +199,7 @@ function socBadge(){ const n=socAgenda(7).length; return n?`<i class="sd-nb">${n
 function socKpi(label, value, sub, cls, act){ return `<div class="sd-kpi ${cls||''} ${act?'go':''}" ${act||''}><span>${label}</span><b>${value}</b>${sub?`<small>${sub}</small>`:''}</div>`; }
 function socPanoramicaHTML(season){
   const D=socData(), range=socSeasonRange(season);
-  const P=D.pay.filter(p=>p.stagione===season && !p.annullata);
+  const P=D.payA.filter(p=>p.stagione===season && !p.annullata);
   const previsto=r2(P.reduce((s,p)=>s+p.importo,0)), incassato=r2(P.reduce((s,p)=>s+payPaid(p),0)), residuo=r2(previsto-incassato);
   const scad=P.filter(p=>payState(p)==='scaduta'), scadTot=r2(scad.reduce((s,p)=>s+payDue(p),0)), morosi=new Set(scad.map(p=>p.atletaId)).size;
   const M=socMovements(range), E=r2(M.filter(m=>m.tipo==='E').reduce((s,m)=>s+m.importo,0)), U=r2(M.filter(m=>m.tipo==='U').reduce((s,m)=>s+m.importo,0));
@@ -237,9 +239,8 @@ function socAgRow(x){
 /* ---------------------------------------------------------------- quote */
 function socQuoteRows(season){
   const D=socData(), f=ui.sq||{}, q=(f.q||'').toLowerCase().trim();
-  const ids=new Set(D.pay.filter(p=>p.stagione===season).map(p=>p.atletaId));
+  const ids=new Set(D.payA.filter(p=>p.stagione===season).map(p=>p.atletaId));
   let L=D.at.filter(a=>a.iscritto || ids.has(a.id)).map(a=>({a, acc:socAccount(a.id, season)}));
-  ids.forEach(id=>{ if(!D.atMap.has(id)) L.push({a:{id, nome:'', cognome:'Atleta eliminato'}, acc:socAccount(id, season)}); });
   if(f.team) L=L.filter(x=>atTeams(x.a).includes(f.team));
   if(q) L=L.filter(x=>(fullName(x.a)+' '+(x.a.genitore||'')).toLowerCase().includes(q));
   if(f.st) L=L.filter(x=>f.st==='aperte'?x.acc.residuo>0:x.acc.st===f.st);
@@ -764,7 +765,7 @@ function socCsv(name, head, rows){
 }
 function socCsvQuote(){
   const season=socSeason(), rows=[];
-  socData().pay.filter(p=>p.stagione===season).forEach(p=>{ const a=socAt(p.atletaId)||{};
+  socData().payA.filter(p=>p.stagione===season).forEach(p=>{ const a=socAt(p.atletaId)||{};
     rows.push([fullName(a), socTeamOf(a), p.stagione, p.voce, payDesc(p), p.scadenza?shortDate(p.scadenza):'', p.importo, payPaid(p), payDue(p), PAY_ST[payState(p)][1], (p.incassi||[]).map(x=>x.ricevuta).filter(Boolean).join(' '), socPayer(a).nome, socPayer(a).tel]); });
   rows.sort((x,y)=>x[0].localeCompare(y[0],'it'));
   socCsv('quote-'+season.replace('/','-')+'.csv', ['Atleta','Squadra','Stagione','Voce','Descrizione','Scadenza','Importo','Versato','Da versare','Stato','Ricevute','Chi paga','Telefono'], rows);
@@ -778,15 +779,15 @@ function socCsvLed(){
 /* ---------------------------------------------------------------- collegamenti col resto dell'app */
 /* promemoria nella pagina iniziale */
 function socHomeRem(){
-  const R=[], season=socSeason(), D=socData(); if(!D.pay.length && !D.dl.length) return R;
-  const scad=D.pay.filter(p=>payState(p)==='scaduta'), n=new Set(scad.map(p=>p.atletaId)).size;
+  const R=[], season=socSeason(), D=socData(); if(!D.payA.length && !D.dl.length) return R;
+  const scad=D.payA.filter(p=>payState(p)==='scaduta'), n=new Set(scad.map(p=>p.atletaId)).size;
   if(n) R.push(`<button class="red" data-action="soc-go" data-t="quote" data-f="scaduta">💶 ${n} atlet${n===1?'a':'i'} con quote scadute</button>`);
   const dl=socAgenda(7).filter(x=>x.k==='societa');
   if(dl.length) R.push(`<button class="${dl.some(x=>x.n<0)?'red':'ora'}" data-action="soc-go" data-t="scadenze">📌 ${dl.length===1?esc(dl[0].t)+' '+(dl[0].n<0?'scaduta':dl[0].n===0?'oggi':'tra '+dl[0].n+' g'):dl.length+' scadenze della società'}</button>`);
   void season; return R;
 }
 function socHomeTile(){
-  const D=socData(), season=socSeason(), P=D.pay.filter(p=>p.stagione===season && !p.annullata), due=r2(P.reduce((s,p)=>s+payDue(p),0));
+  const D=socData(), season=socSeason(), P=D.payA.filter(p=>p.stagione===season && !p.annullata), due=r2(P.reduce((s,p)=>s+payDue(p),0));
   return ['societa','Società','#0f766e', P.length?(due>0?`Da incassare ${eur(due)}`:'Quote tutte incassate ✓'):'Quote, pagamenti e scadenze'];
 }
 /* riquadro nel profilo dell'atleta */

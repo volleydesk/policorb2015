@@ -1,8 +1,8 @@
 /* Volleydesk – funzionamento senza rete.
    Cambiare VERSION a ogni pubblicazione: l'app proporrà "Aggiorna". */
-const VERSION = 'v8-2026-10-07';
+const VERSION = 'v10-2026-10-08';
 const CACHE = 'volleydesk-shell-' + VERSION;
-const SHELL = ['./', 'index.html', 'store.js', 'sync.js', 'societa.js', 'societa.css', 'accessi.js', 'squadre.js', 'importa.js', 'iscrizioni.js', 'promemoria.js', 'bilancio.js', 'palestre.js', 'pagamenti.js', 'documenti.js', 'paga.html', 'iscrizione.html', 'promemoria/promemoria.py', 'promemoria/volleydesk-promemoria.yml', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
+const SHELL = ['./', 'index.html', 'store.js', 'sync.js', 'societa.js', 'societa.css', 'accessi.js', 'squadre.js', 'importa.js', 'iscrizioni.js', 'promemoria.js', 'bilancio.js', 'palestre.js', 'pagamenti.js', 'documenti.js', 'cestino.js', 'paga.html', 'iscrizione.html', 'promemoria/promemoria.py', 'promemoria/volleydesk-promemoria.yml', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)));
 });
